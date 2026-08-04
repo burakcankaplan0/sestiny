@@ -1,0 +1,45 @@
+# Ortam değişkenleri (gizli bilgi içerebilir — asla commit edilmez)
+.env
+.env.*
+!.env.example
+
+# Node / frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+coverage/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python / backend
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Ses kayıtları — kullanıcı sesi hiçbir koşulda depoya girmez
+*.wav
+*.webm
+*.ogg
+*.mp3
+*.m4a
+*.flac
+tmp/
+temp/
+uploads/
+
+# İşletim sistemi / editör
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
