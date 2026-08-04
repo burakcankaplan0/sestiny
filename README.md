@@ -9,8 +9,9 @@ bu profile uygun şarkılar önermeyi hedefleyen, web tabanlı bir uygulamadır.
 
 ## Durum
 
-🚧 Geliştirme aşamasında — **Aşama 0 (Ortam ve Plan) tamamlandı.** Henüz çalışan bir
-uygulama yoktur. Geliştirme planı için `docs/PROJECT_PLAN.md` dosyasına bakın.
+🚧 Geliştirme aşamasında — **Aşama 1 (Frontend–Backend bağlantısı) tamamlandı.**
+Uygulama açılıyor ve backend'e bağlanıyor; ses kaydı özellikleri henüz yok.
+Geliştirme planı için `docs/PROJECT_PLAN.md` dosyasına bakın.
 
 ## Nasıl çalışır?
 
@@ -35,21 +36,62 @@ Uygulama tamamen lokal çalışır.
 
 ## Gereksinimler
 
-| Araç | Gereken sürüm | Bu makinede |
+| Araç | Gereken sürüm | Doğrulandığı sürüm |
 | --- | --- | --- |
-| Node.js | 20 LTS veya üzeri | ❌ kurulu değil |
-| npm | Node ile birlikte gelir | ❌ kurulu değil |
-| Python | 3.11 veya üzeri | ⚠️ yalnızca 3.9.6 var |
-| FFmpeg | güncel sürüm | ❌ kurulu değil |
-| Git | 2.x | ✅ 2.50.1 |
+| Node.js | 20 veya üzeri | 26.6.0 |
+| npm | Node ile gelir | 11.18.0 |
+| Python | 3.11 veya üzeri | 3.12.13 |
+| Git | 2.x | 2.50.1 |
+| FFmpeg | *(gerekip gerekmediği Aşama 3'te kesinleşecek)* | — |
 
-Eksik araçların kurulumu Aşama 1 başlamadan yapılacaktır.
+## Kurulum
 
-## Kurulum ve çalıştırma
+Bir kereye mahsus, proje kökünde:
 
-> Bu bölüm Aşama 1'de gerçek, doğrulanmış komutlarla doldurulacaktır.
-> Henüz `frontend/` ve `backend/` klasörleri oluşturulmadığı için buraya
-> çalıştığı doğrulanmamış komut yazılmamıştır.
+```bash
+python3.12 -m venv backend/.venv && backend/.venv/bin/pip install -r backend/requirements.txt && npm --prefix frontend install
+```
+
+İsteğe bağlı — varsayılan ayarları değiştirmek istersen:
+
+```bash
+cp backend/.env.example backend/.env && cp frontend/.env.example frontend/.env
+```
+
+## Çalıştırma
+
+İki ayrı terminal gerekir.
+
+**Terminal 1 — backend** (http://127.0.0.1:8000):
+
+```bash
+cd backend && .venv/bin/uvicorn app.main:app --reload
+```
+
+**Terminal 2 — frontend** (http://localhost:5173):
+
+```bash
+npm --prefix frontend run dev
+```
+
+Tarayıcıda http://localhost:5173 adresini aç. Bağlantı kartında
+"Backend bağlantısı başarılı" yazmalı.
+
+İnteraktif API dokümanı: http://127.0.0.1:8000/docs
+
+## Testler
+
+**Backend:**
+
+```bash
+cd backend && .venv/bin/python -m pytest
+```
+
+**Frontend** (testler + tip kontrolü + lint):
+
+```bash
+npm --prefix frontend test && npm --prefix frontend run typecheck && npm --prefix frontend run lint
+```
 
 ## Gizlilik
 

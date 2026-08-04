@@ -1,0 +1,112 @@
+/*
+ * Sestiny — temel stiller ve tasarım değişkenleri.
+ *
+ * Renkler CSS değişkeni olarak tanımlanır ve açık/koyu sistem temasına uyar.
+ * Durum anlatımı asla yalnızca renge bağlı değildir; her durumun metin karşılığı vardır.
+ */
+
+:root {
+  /* Açık tema (varsayılan) */
+  --color-bg: #f6f7fb;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f0f2f8;
+  --color-border: #dfe3ee;
+  --color-text: #171a25;
+  --color-text-muted: #5a6076;
+  --color-accent: #4b3fd6;
+  --color-accent-contrast: #ffffff;
+  --color-success-text: #135c3a;
+  --color-success-bg: #e6f6ee;
+  --color-success-border: #9bd9bb;
+  --color-error-text: #8a1f2b;
+  --color-error-bg: #fdeced;
+  --color-error-border: #f0adb4;
+  --color-focus: #4b3fd6;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  --shadow-card: 0 1px 2px rgb(16 20 40 / 6%), 0 8px 24px rgb(16 20 40 / 6%);
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0e1017;
+    --color-surface: #161a24;
+    --color-surface-muted: #1e2330;
+    --color-border: #2b3243;
+    --color-text: #eef1f8;
+    --color-text-muted: #a3abc0;
+    --color-accent: #9b93ff;
+    --color-accent-contrast: #14121f;
+    --color-success-text: #8fe3ba;
+    --color-success-bg: #14301f;
+    --color-success-border: #2e6b47;
+    --color-error-text: #ffb3bb;
+    --color-error-bg: #33161b;
+    --color-error-border: #7c333d;
+    --color-focus: #9b93ff;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 30%);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+p {
+  margin: 0;
+}
+
+/* Klavye kullanıcıları için her yerde görünür odak halkası */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -41,6 +41,9 @@ Sistem Python'una dokunulmayacak; backend kendi `.venv` klasöründe izole çal�
 ### K-006: Node.js 20 LTS hedefleniyor
 Vite 5+ için Node 18+ gerekir. LTS sürüm en az sürprizi verir.
 **Karar:** Homebrew ile `node` kurulacak (kullanıcı onayı bekleniyor).
+**Güncelleme (Aşama 1):** Homebrew'un `node` formülü güncel sürümü (26.6.0) kurdu.
+Vite 8 derlemesi, testler ve tip kontrolü bu sürümde sorunsuz çalıştığı için ayrıca
+LTS'e düşürülmedi. İleride bir araç uyumsuzluk çıkarırsa `node@22`'ye geçilecek.
 
 ### K-007: Ses format dönüştürme aracı Aşama 3'te kesinleşecek
 Tarayıcılar WebM/Opus veya MP4/AAC üretir; `soundfile` (libsndfile) bunları okuyamaz.
@@ -77,3 +80,42 @@ buna karşılık gizlilik riski var.
 **Karar:** Geçici dosyalar güvenli rastgele isimlerle oluşturulur ve analiz bitince
 (hata durumunda da) `finally` bloğunda silinir. Ses içeriği loglanmaz.
 `.gitignore` tüm yaygın ses formatlarını dışlar.
+
+---
+
+## Aşama 1 — 2026-08-04
+
+### K-012: Backend bağımlılıkları aşama aşama eklenecek
+`requirements.txt` şu an yalnızca FastAPI, Uvicorn, Pydantic ve test araçlarını içeriyor.
+librosa/NumPy/SciPy/SoundFile ağır paketler; henüz tek satır kod onları kullanmıyor.
+"Kullanılmayan bağımlılık bırakma" kuralı gereği erken eklenmiyorlar.
+**Karar:** Ses kütüphaneleri Aşama 3/4'te, gerçekten kullanıldıkları anda eklenecek.
+
+### K-013: Frontend'de TypeScript `strict` modu açıldı
+Vite şablonu `strict` bayrağını tanımlamadan geldi. Bu hâliyle `any` sızıntıları ve
+`null` kontrolü eksikleri sessizce geçerdi — CLAUDE.md'deki tip güvenliği kuralına aykırı.
+**Karar:** `tsconfig.app.json` içine `strict` ve `noImplicitOverride` eklendi.
+
+### K-014: Test aracı olarak Vitest 4 kullanılıyor
+Vitest 3, kendi içinde eski (rollup tabanlı) bir Vite kopyası taşıyor ve projedeki
+Vite 8 (rolldown) ile tip çakışması üretti — `tsc -b` hata verdi.
+**Karar:** Vitest 4'e geçildi; kendi Vite kopyasını taşımıyor, tip kontrolü temiz geçiyor.
+
+### K-015: Hatalar kullanıcıya tek bir sarmalayıcıdan geçerek gösteriliyor
+Backend isteklerinin tamamı `src/api/client.ts` üzerinden yapılıyor. Bu katman
+HTTP kodunu, ağ hatasını ve JSON ayrıştırma hatasını yakalayıp önceden yazılmış
+Türkçe mesaja çeviriyor; ham detay yalnızca `ApiError.detail` alanında kalıyor.
+**Neden:** Teknik hata metinlerinin arayüze sızması tek tek `catch` bloklarına
+bırakılırsa er geç biri unutulur.
+**Karar:** UI bileşenleri asla ham hata nesnesi göstermez. Testler bunu doğruluyor
+(HTTP 500 ve "Failed to fetch" metinlerinin ekranda **olmadığı** kontrol ediliyor).
+
+### K-016: Kullanıcı metinleri `src/texts.ts` içinde toplandı
+Ürünün en kritik kuralı, "kesin teşhis" iması taşıyan cümle kurmamak. Metinler
+bileşenlerin içine dağılırsa bunu gözden geçirmek imkânsızlaşır.
+**Karar:** Tüm kullanıcı metinleri tek dosyada. Bileşenler metin string'i yazmaz.
+
+### K-017: Bağlantı durumu yalnızca renkle anlatılmıyor
+Yeşil/kırmızı kart, renk körlüğü olan veya ekran okuyucu kullanan biri için bilgi taşımaz.
+**Karar:** Kartta ayrıca "Bağlı / Bağlanamadı / Kontrol ediliyor" metin etiketi var ve
+kart `role="status" aria-live="polite"` ile duyuruluyor.

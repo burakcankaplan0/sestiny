@@ -1,0 +1,70 @@
+/* Mobil öncelikli sayfa düzeni. Geniş ekranlarda içerik ortada ve sınırlı genişlikte kalır. */
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: var(--space-5) var(--space-4) var(--space-7);
+}
+
+.page__content {
+  width: 100%;
+  max-width: 34rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.intro__eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+}
+
+.intro__title {
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+.intro__text {
+  color: var(--color-text-muted);
+}
+
+.notice {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.notice__title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.notice__text {
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+}
+
+@media (min-width: 40rem) {
+  .page {
+    padding-top: var(--space-7);
+  }
+
+  .intro__title {
+    font-size: 2.75rem;
+  }
+}

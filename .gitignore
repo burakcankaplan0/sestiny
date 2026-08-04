@@ -46,3 +46,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# Claude Code launch yapılandırması (makineye özel değil, ekiple paylaşılabilir)
+!.claude/launch.json
