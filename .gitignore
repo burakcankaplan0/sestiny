@@ -37,6 +37,9 @@ tmp/
 temp/
 uploads/
 
+# Makineye özel araç ayarları (dosya diskte kalır, sadece Git'e girmez)
+.claude/settings.local.json
+
 # İşletim sistemi / editör
 .DS_Store
 Thumbs.db
