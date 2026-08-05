@@ -52,6 +52,22 @@ export interface ProfileSummary {
   summary: string;
 }
 
+export interface SongRecommendation {
+  id: string;
+  title: string;
+  artist: string;
+  language: string;
+  genre: string;
+  difficulty: "kolay" | "orta" | "zor";
+  min_note: string;
+  max_note: string;
+  match_score: number;
+  /** Negatif: aşağıdan, pozitif: yukarıdan denemek daha rahat olabilir. null: gerek yok. */
+  transposition_semitones: number | null;
+  verified: boolean;
+  source_note: string;
+}
+
 export interface AnalyzeSessionResponse {
   session_id: string;
   status: "accepted" | "rejected";
@@ -60,4 +76,5 @@ export interface AnalyzeSessionResponse {
   sustained_vowel: SustainedVowelAnalysis;
   glide: GlideAnalysis;
   profile: ProfileSummary | null;
+  recommendations: SongRecommendation[];
 }

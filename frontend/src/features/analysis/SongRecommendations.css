@@ -1,0 +1,115 @@
+.recommendations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.recommendations__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.recommendations__intro {
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
+}
+
+.recommendations__filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.recommendations__filter-button {
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: var(--space-2) var(--space-4);
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.recommendations__filter-button[aria-pressed="true"] {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.recommendations__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.recommendations__card {
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.recommendations__card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.recommendations__song-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.recommendations__song-artist {
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
+}
+
+.recommendations__match {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+.recommendations__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.recommendations__badge {
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-muted);
+}
+
+.recommendations__demo-badge {
+  color: var(--color-error-text);
+  border-color: var(--color-error-border);
+  background-color: var(--color-error-bg);
+}
+
+.recommendations__transpose-hint {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.recommendations__empty {
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
+}

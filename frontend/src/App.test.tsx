@@ -84,6 +84,22 @@ const ACCEPTED_ANALYSIS_RESPONSE = {
     summary:
       "Kaydında orta-düşük bölgede yoğunlaşan bir ses profili gözlemlendi. Uzun ses testinde perde kararlılığın yüksekti. Kaydırma testinde yaklaşık G2–E4 aralığı gözlemlendi. Bu değerler profesyonel bir ses türü teşhisi değildir ve mikrofon, ortam, teknik ve o anki ses durumundan etkilenebilir.",
   },
+  recommendations: [
+    {
+      id: "demo-002",
+      title: "Demo Şarkı 2",
+      artist: "Demo Sanatçı 2",
+      language: "tr",
+      genre: "halk",
+      difficulty: "kolay",
+      min_note: "A2",
+      max_note: "A3",
+      match_score: 100,
+      transposition_semitones: null,
+      verified: false,
+      source_note: "Demo veri — gerçek bir şarkı değildir, yalnızca geliştirme/test amaçlıdır.",
+    },
+  ],
 };
 
 /** Testlerde gerçek MediaRecorder yerine kullanılan basit sahte kayıt cihazı. */
@@ -289,6 +305,11 @@ describe("Uçtan uca analiz akışı", () => {
       expect(screen.getByText(/D3.*150\.2 Hz/)).toBeVisible();
       expect(screen.getByText(texts.results.stabilityValue("stabil", 88))).toBeVisible();
       expect(screen.getByText(texts.disclaimer.notDiagnosis)).toBeVisible();
+
+      // Şarkı önerisi de gösterilmeli.
+      expect(screen.getByText(texts.recommendations.title)).toBeVisible();
+      expect(screen.getByText("Demo Şarkı 2")).toBeVisible();
+      expect(screen.getByText(texts.recommendations.demoBadge)).toBeVisible();
 
       // Ham backend alan adları veya teknik jargon sızmamalı.
       expect(screen.queryByText(/median_f0_hz|observed_low_midi|session_id/)).not.toBeInTheDocument();

@@ -29,6 +29,8 @@ def _glide(low_midi: int = 43, high_midi: int = 64) -> GlideAnalysis:
         range_semitones=high_midi - low_midi,
         estimated_comfortable_low_note="A2",
         estimated_comfortable_high_note="D4",
+        estimated_comfortable_low_midi=low_midi + 2,
+        estimated_comfortable_high_midi=high_midi - 2,
         confidence=0.9,
     )
 
@@ -43,6 +45,8 @@ def test_no_glide_range_means_no_profile():
         range_semitones=None,
         estimated_comfortable_low_note=None,
         estimated_comfortable_high_note=None,
+        estimated_comfortable_low_midi=None,
+        estimated_comfortable_high_midi=None,
         confidence=0.0,
     )
     assert build_profile(_vowel(), empty_glide) is None

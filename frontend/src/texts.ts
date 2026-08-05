@@ -114,4 +114,21 @@ export const texts = {
 
     redoAll: "Testi yeniden yap",
   },
+
+  recommendations: {
+    title: "Şarkı önerileri",
+    intro:
+      "Bu öneriler, tahmini rahat bölgene göre sıralanmış demo verilerdir — gerçek, doğrulanmış bir şarkı listesi değildir.",
+    empty: "Bu aralık için öneri bulunamadı.",
+    demoBadge: "Demo veri",
+    matchLabel: (percent: number) => `%${percent} eşleşme`,
+    rangeLabel: (min: string, max: string) => `${min} – ${max}`,
+    transposeDown: (semitones: number) => `${semitones} semiton aşağıdan denemek daha rahat olabilir.`,
+    transposeUp: (semitones: number) => `${semitones} semiton yukarıdan denemek daha rahat olabilir.`,
+    difficultyFilterLabel: "Zorluk",
+    difficultyAll: "Tümü",
+    difficultyEasy: "Kolay",
+    difficultyMedium: "Orta",
+    difficultyHard: "Zor",
+  },
 } as const;

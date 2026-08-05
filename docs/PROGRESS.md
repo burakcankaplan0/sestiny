@@ -420,3 +420,84 @@ olarak taklit edilerek — kaynak kod değiştirilmeden) uçtan uca denendi:
 ### Sonraki adım
 
 Aşama 6 (Şarkı önerileri) — kullanıcının "devam" onayı bekleniyor.
+
+---
+
+## Aşama 6 — Şarkı Önerileri · 2026-08-05 · ✅ Tamamlandı
+
+Şarkı önerileri artık `POST /api/v1/analyze-session` cevabının bir parçası
+(CLAUDE.md'nin örnek şemasıyla birebir uyumlu — ayrı bir uç nokta değil, bkz.
+K-038). Sonuç ekranında "Analiz et"e basınca ilk kez öneri kartları da görünüyor.
+
+### Eklenen dosyalar
+
+| Dosya | İçerik |
+| --- | --- |
+| `backend/app/data/demo_songs.json` | 12 açıkça kurgu "Demo Şarkı" kaydı (`verified: false`), farklı aralık/zorluk/tür karışımı |
+| `backend/app/services/recommendation.py` | Şarkı yükleme, aralık eşleştirme, ton değiştirme önerisi, 0-100 skor, sıralama |
+| `frontend/src/features/analysis/SongRecommendations.tsx` | Öneri kartları + zorluk filtresi (Tümü/Kolay/Orta/Zor) |
+
+`backend/app/services/pitch_analysis.py`'deki `GlideAnalysis`'e
+`estimated_comfortable_low_midi`/`high_midi` eklendi (öneri eşleştirmesi bu
+sayısal değerleri kullanıyor; nota adı string'inden geri MIDI'ye çevirmiyor).
+`schemas/analysis.py` ve `api/analysis.py` `recommendations` alanını
+kapsayacak şekilde genişletildi.
+
+### Kapsanan gereksinimler (CLAUDE.md Aşama 6)
+
+- ✅ Şarkı veri modeli (id, title, artist, language, genre, min/max_midi,
+  min/max_note, difficulty, verified, source_note, optional_transposition_limit)
+- ✅ JSON içe aktarma (`demo_songs.json`, `lru_cache` ile bir kez okunuyor)
+- ✅ Aralık eşleştirme algoritması: gözlemlenen aralık örtüşmesine göre 0-100 skor
+- ✅ Ton değiştirme önerisi: 1-3 yarı ton taşan şarkılar için (−3..+3 arası en
+  az taşmayı veren kaydırma brute-force bulunuyor, bkz. K-039)
+- ✅ Çok büyük fark varsa şarkı filtrelenmiyor, düşük skorla geride kalıyor
+- ✅ Zorluk seviyesi skora dahil (backend) + ayrı filtre kontrolü (frontend, K-040)
+- ✅ En uygun 5-10 sonuç sıralanıyor (`MAX_RECOMMENDATIONS = 10`)
+- ✅ Öneri kartı: şarkı adı, sanatçı, tür, zorluk, nota aralığı, eşleşme
+  yüzdesi, gerekirse "N semiton aşağıdan/yukarıdan denemek daha rahat
+  olabilir" uyarısı
+- ✅ Gerçek şarkı aralıkları uydurulmuyor — yalnızca demo veri, `verified: false`,
+  frontend'de görünür "Demo veri" rozeti (K-042)
+
+### Testler — hepsi geçiyor
+
+| Test dosyası | Sonuç |
+| --- | --- |
+| Mevcut backend testleri | ✅ 32/32 |
+| `test_recommendation.py` | ✅ 14/14 (tam sığma, 2 yarı ton taşma → doğru yönde ton önerisi, aşırı taşma → öneri yok + düşük skor, zorluk skoru düşürüyor, şarkıya özel transposition sınırına uyuluyor, skor asla negatif değil, tutarlı sonuçlar, sıralama, aralık değişince sıralama değişiyor, demo şarkılar hiç `verified` işaretlenmiyor, açıkça kurgu isimler, en fazla 10 sonuç) |
+| `test_analysis.py` (yeni testler) | ✅ (kabul edilen oturumda öneri üretiliyor + sıralı; reddedilen oturumda öneri yok) |
+| Mevcut frontend testleri | ✅ 26/26 |
+| `ResultsScreen.test.tsx` (yeni testler) | ✅ 6/6 (öneri yoksa bölüm gizli, kart alanları doğru, demo rozeti, aşağı/yukarı ton ipucu, zorluk filtresi) |
+| App uçtan uca testi (genişletildi) | ✅ (öneri bölümü de kontrol ediliyor) |
+| **Backend toplam** | **✅ 46/46** |
+| **Frontend toplam** | **✅ 32/32** |
+
+Tip kontrolü, lint ve üretim derlemesi temiz.
+
+### Gerçek dosyayla ve tarayıcıda doğrulama
+
+- Gerçek WebM/Opus dosyalarıyla canlı sunucuya istek atıldı: 10 öneri, doğru
+  sıralı (100, 100, 100, 95, 95, 95, 87, 84, 63, 34), ton önerileri doğru
+  yönde (`-3`, `2` gibi), hepsi `verified: false`.
+- Tarayıcıda (fetch/mikrofon API'leri yalnızca doğrulama amaçlı taklit
+  edilerek) uçtan uca denendi: üç test kaydedildi, "Analiz et"e basıldı,
+  sonuç ekranında "Şarkı önerileri" bölümü doğru verilerle göründü.
+- Masaüstünde ve mobilde (375px): kartlar tek sütun, "Demo veri" rozeti
+  belirgin, transposition ipuçları doğru metinle görünüyor.
+- Zorluk filtresi elle denendi: "Zor"a basınca liste 4 şarkıdan 1'e düştü
+  (yalnızca zor olan kaldı), "Tümü"ne dönünce 4'ü de geri geldi.
+- Konsolda hata yok.
+
+### Kabul kriterleri
+
+| Kriter | Durum |
+| --- | --- |
+| Demo verilerden tutarlı öneriler çıkıyor | ✅ |
+| Kullanıcı aralığı değişince sıralama değişiyor | ✅ |
+| Ton önerisi matematiksel olarak doğru hesaplanıyor | ✅ |
+| Demo veriler gerçek/verifiye edilmiş şarkı gibi sunulmuyor | ✅ |
+
+### Sonraki adım
+
+Aşama 7 (Kalite, test ve dokümantasyon) — kullanıcının "devam" onayı bekleniyor.

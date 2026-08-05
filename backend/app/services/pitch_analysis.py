@@ -268,6 +268,10 @@ class GlideAnalysis:
     range_semitones: int | None
     estimated_comfortable_low_note: str | None
     estimated_comfortable_high_note: str | None
+    # Şarkı önerisi eşleştirmesi (Aşama 6) bu sayısal değerleri kullanır; nota
+    # adı string'inden geri MIDI'ye çevirmek yerine tek doğruluk kaynağı burası.
+    estimated_comfortable_low_midi: int | None
+    estimated_comfortable_high_midi: int | None
     confidence: float
 
 
@@ -283,6 +287,8 @@ def analyze_glide(samples: np.ndarray, sample_rate: int) -> GlideAnalysis:
             range_semitones=None,
             estimated_comfortable_low_note=None,
             estimated_comfortable_high_note=None,
+            estimated_comfortable_low_midi=None,
+            estimated_comfortable_high_midi=None,
             confidence=track.confidence,
         )
 
@@ -292,13 +298,17 @@ def analyze_glide(samples: np.ndarray, sample_rate: int) -> GlideAnalysis:
 
     comfortable_low_note = None
     comfortable_high_note = None
+    comfortable_low_midi = None
+    comfortable_high_midi = None
     has_enough_data = len(midi_values) >= GLIDE_COMFORTABLE_RANGE_MIN_FRAMES
     has_enough_confidence = track.confidence >= GLIDE_COMFORTABLE_RANGE_MIN_CONFIDENCE
     if has_enough_data and has_enough_confidence:
         low_percentile = float(np.percentile(midi_values, COMFORTABLE_RANGE_LOW_PERCENTILE))
         high_percentile = float(np.percentile(midi_values, COMFORTABLE_RANGE_HIGH_PERCENTILE))
-        comfortable_low_note = midi_to_note_name(low_percentile)
-        comfortable_high_note = midi_to_note_name(high_percentile)
+        comfortable_low_midi = round(low_percentile)
+        comfortable_high_midi = round(high_percentile)
+        comfortable_low_note = midi_to_note_name(comfortable_low_midi)
+        comfortable_high_note = midi_to_note_name(comfortable_high_midi)
 
     return GlideAnalysis(
         observed_low_note=midi_to_note_name(low_midi),
@@ -308,5 +318,7 @@ def analyze_glide(samples: np.ndarray, sample_rate: int) -> GlideAnalysis:
         range_semitones=high_midi - low_midi,
         estimated_comfortable_low_note=comfortable_low_note,
         estimated_comfortable_high_note=comfortable_high_note,
+        estimated_comfortable_low_midi=comfortable_low_midi,
+        estimated_comfortable_high_midi=comfortable_high_midi,
         confidence=track.confidence,
     )

@@ -302,3 +302,59 @@ yakalanmadığı, bunun da tüm uygulamayı boş bir sayfaya düşürdüğü gö
 olursa (gerçek tarayıcılarda nadiren de olsa mümkün — cihaz kaybı, izin geri
 alınması vb.) özellik sessizce devre dışı kalır (seviye 0 döner), sayfa
 çökmez. Regresyon testi eklendi (`useMicrophoneLevel.test.ts`).
+
+---
+
+## Aşama 6 — 2026-08-05
+
+### K-038: Şarkı önerileri ayrı bir uç nokta değil, `analyze-session` cevabının parçası
+CLAUDE.md'nin bölüm 9'daki örnek JSON şeması `recommendations`'ı doğrudan
+analiz cevabının içinde gösteriyor; öneriler zaten o oturumun tahmini rahat
+bölgesine bağlı, ayrı bir GET isteği yalnızca gereksiz bir gidiş-geliş
+eklerdi.
+**Karar:** `POST /api/v1/analyze-session` artık `recommendations: []` alanını
+da dolduruyor — yalnızca oturum kabul edildiyse VE glide'ın tahmini rahat
+bölgesi güvenilir şekilde belirlenebildiyse (aksi hâlde boş liste, uydurma
+öneri yok).
+
+### K-039: Ton değiştirme önerisi, kaydırma dışında en az taşmayı üreten kaydırma (-3..+3) brute-force taranarak bulunuyor
+Şarkının kendi aralığı ile kullanıcının aralığı arasındaki en iyi hizalamayı
+analitik bir formülle (ör. orta noktaları hizalama) hesaplamak yerine, izin
+verilen küçük aralıkta (varsayılan ±3 yarı ton) her kaydırmayı deneyip en az
+taşmayı vereni seçmek hem daha basit hem de her durumda (şarkı aralığı
+kullanıcıdan geniş olsa bile) doğru sonuç veriyor.
+**Karar:** `_find_best_shift` fonksiyonu 7 değeri (−3..+3) dener. 0 kaydırma
+zaten en iyisiyse (taşma yok veya kaydırma iyileştirmiyor) öneri yapılmaz —
+zaten uyan bir şarkı için gereksiz "ton değiştir" uyarısı çıkmaz. Öneri
+yalnızca kaydırma taşmayı **sıfıra** indiriyorsa yapılır; "biraz iyileştirdi
+ama hâlâ sığmıyor" durumunda ton önerisi yapılmaz, sadece düşük skorla
+sıralamada geride kalır (CLAUDE.md adım 5: "çok büyük fark varsa üst
+sıralarda önerme" — filtrelemek yerine düşük skorla doğal olarak geride
+bırakılıyor).
+
+### K-040: Zorluk, hem eşleşme skorunu hem de (frontend'de) ayrı bir filtreyi etkiliyor
+CLAUDE.md hem "Eşleşme skoru" hem de ayrı bir madde olarak "Zorluk filtresi"
+listeliyor — bunlar iki farklı şey: biri görünmez bir ağırlıklandırma, diğeri
+kullanıcının elle değiştirebileceği bir kontrol.
+**Karar:** Backend skor hesaplarken zorluğu hafif bir ceza olarak zaten
+kullanıyor (K-025'in devamı). Ayrıca frontend'de zorluk filtresi (Tümü/Kolay/
+Orta/Zor) istemci tarafında, backend'in döndürdüğü (en fazla 10) öneri
+üzerinde çalışıyor — ek bir istek gerektirmiyor.
+
+### K-041: Şarkının nota adları (min_note/max_note), veri dosyasında saklanmıyor; MIDI'den türetiliyor
+CLAUDE.md'nin veri modelinde hem `min_midi`/`max_midi` hem `min_note`/
+`max_note` var. İkisini de elle veri dosyasına yazmak, ileride biri
+güncellenip diğeri unutulursa tutarsızlık riski taşır.
+**Karar:** `demo_songs.json` yalnızca `min_midi`/`max_midi` tutar; nota adları
+API cevabı oluşturulurken `music_theory.midi_to_note_name` ile hesaplanır —
+tek doğruluk kaynağı.
+
+### K-042: Demo şarkılar açıkça kurgu isimlerle ve `verified: false` ile işaretlendi, frontend'de "Demo veri" rozeti gösteriliyor
+CLAUDE.md kabul kriteri: "Demo veriler gerçek/verifiye edilmiş şarkı gibi
+sunulmuyor."
+**Karar:** 12 demo şarkının tümü "Demo Şarkı N" / "Demo Sanatçı N" adlı,
+`verified: false`, açıklayıcı `source_note` alanlı. Frontend her öneri
+kartında görünür bir "Demo veri" rozeti gösteriyor ve bölüm girişinde "gerçek,
+doğrulanmış bir şarkı listesi değildir" uyarısı var. Test edildi (backend:
+`test_demo_songs_are_never_marked_as_verified`, `test_demo_songs_use_clearly_fictional_names`;
+frontend: demo rozeti render testi).

@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class QualitySummary(BaseModel):
@@ -67,13 +67,31 @@ class ProfileSummary(BaseModel):
     summary: str
 
 
+class SongRecommendation(BaseModel):
+    """Tek bir demo şarkı önerisi. `verified: false` — gerçek/doğrulanmış şarkı değildir."""
+
+    id: str
+    title: str
+    artist: str
+    language: str
+    genre: str
+    difficulty: Literal["kolay", "orta", "zor"]
+    min_note: str
+    max_note: str
+    match_score: int
+    # Negatif: aşağıdan (daha pes), pozitif: yukarıdan denemek daha rahat olabilir. None: gerek yok.
+    transposition_semitones: int | None
+    verified: bool
+    source_note: str
+
+
 class AnalyzeSessionResponse(BaseModel):
     """POST /api/v1/analyze-session cevabı.
 
     "accepted" durumu üç kaydın da analiz edilebilir kalitede olduğu anlamına
     gelir. `profile`, yalnızca oturum kabul edildiyse ve glide aralığı güvenilir
-    şekilde belirlenebildiyse doldurulur; aksi hâlde `null`. Şarkı önerileri
-    henüz üretilmez — bu Aşama 6'nın işi.
+    şekilde belirlenebildiyse doldurulur; aksi hâlde `null`. `recommendations`
+    aynı koşulda doldurulur; aksi hâlde boş liste (uydurma öneri yok).
     """
 
     session_id: str
@@ -83,3 +101,4 @@ class AnalyzeSessionResponse(BaseModel):
     sustained_vowel: SustainedVowelAnalysis
     glide: GlideAnalysis
     profile: ProfileSummary | None
+    recommendations: list[SongRecommendation] = Field(default_factory=list)

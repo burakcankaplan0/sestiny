@@ -164,7 +164,16 @@ def test_response_schema_has_expected_fields():
     response = client.post(f"{API_V1_PREFIX}/analyze-session", files=_valid_session_files())
     body = response.json()
 
-    assert set(body.keys()) == {"session_id", "status", "quality", "speech", "sustained_vowel", "glide", "profile"}
+    assert set(body.keys()) == {
+        "session_id",
+        "status",
+        "quality",
+        "speech",
+        "sustained_vowel",
+        "glide",
+        "profile",
+        "recommendations",
+    }
     assert set(body["quality"].keys()) == {"overall_score", "label", "warnings"}
 
     common_fields = {"accepted", "warnings", "duration_seconds", "confidence"}
@@ -233,3 +242,30 @@ def test_rejected_recording_does_not_get_fabricated_pitch_fields():
     assert body["speech"]["approximate_note"] is None
     assert body["status"] == "rejected"
     assert body["profile"] is None
+
+
+def test_valid_session_produces_song_recommendations():
+    """Kabul edilen oturumda demo şarkı önerileri üretilir, gerçek şarkı gibi sunulmaz."""
+    response = client.post(f"{API_V1_PREFIX}/analyze-session", files=_valid_session_files())
+    body = response.json()
+
+    assert len(body["recommendations"]) > 0
+    for recommendation in body["recommendations"]:
+        assert recommendation["verified"] is False
+        assert recommendation["title"].startswith("Demo Şarkı")
+        assert 0 <= recommendation["match_score"] <= 100
+        assert recommendation["min_note"] and recommendation["max_note"]
+
+    scores = [item["match_score"] for item in body["recommendations"]]
+    assert scores == sorted(scores, reverse=True)
+
+
+def test_rejected_session_has_no_recommendations():
+    """Kalitesi reddedilen bir oturumda uydurma şarkı önerisi yapılmaz."""
+    files = _valid_session_files()
+    files["speech"] = ("speech.wav", io.BytesIO(_sine_wav_bytes(150, 0.5)), "audio/wav")
+
+    response = client.post(f"{API_V1_PREFIX}/analyze-session", files=files)
+    body = response.json()
+
+    assert body["recommendations"] == []

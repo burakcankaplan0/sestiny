@@ -14,13 +14,17 @@ from app.schemas.analysis import (
     GlideAnalysis,
     ProfileSummary,
     QualitySummary,
+    SongRecommendation,
     SpeechAnalysis,
     SustainedVowelAnalysis,
 )
 from app.services import pitch_analysis
 from app.services.audio_conversion import UnsupportedAudioError, decode_to_mono_array
 from app.services.audio_quality import FileQualityResult, compute_quality_metrics, evaluate_quality, label_for_score
+from app.services.music_theory import midi_to_note_name
 from app.services.profile_builder import build_profile
+from app.services.recommendation import SongRecommendation as RecommendationResult
+from app.services.recommendation import get_recommendations
 
 router = APIRouter(tags=["analysis"])
 logger = get_logger(__name__)
@@ -160,6 +164,23 @@ async def analyze_session(
                     summary=profile_result.summary,
                 )
 
+        # Şarkı önerileri, tahmini rahat bölge güvenilir şekilde belirlenebildiyse üretilir;
+        # aksi hâlde boş liste döner — uydurma öneri yapılmaz.
+        recommendations: list[SongRecommendation] = []
+        if (
+            all_accepted
+            and glide_result is not None
+            and glide_result.estimated_comfortable_low_midi is not None
+            and glide_result.estimated_comfortable_high_midi is not None
+        ):
+            recommendations = [
+                _recommendation_schema(item)
+                for item in get_recommendations(
+                    glide_result.estimated_comfortable_low_midi,
+                    glide_result.estimated_comfortable_high_midi,
+                )
+            ]
+
         return AnalyzeSessionResponse(
             session_id=session_id,
             status="accepted" if all_accepted else "rejected",
@@ -168,6 +189,7 @@ async def analyze_session(
             sustained_vowel=_vowel_schema(quality_reports["sustained_vowel"], vowel_result),
             glide=_glide_schema(quality_reports["glide"], glide_result),
             profile=profile,
+            recommendations=recommendations,
         )
     finally:
         # Analiz bitince (başarılı ya da başarısız) geçici ses dosyaları her zaman silinir.
@@ -231,6 +253,25 @@ def _vowel_schema(
         stability_score=result.stability_score,
         stability_label=result.stability_label,
         confidence=result.confidence,
+    )
+
+
+def _recommendation_schema(item: RecommendationResult) -> SongRecommendation:
+    """recommendation.SongRecommendation'ı API şemasına çevirir; nota adları MIDI'den türetilir."""
+    song = item.song
+    return SongRecommendation(
+        id=song.id,
+        title=song.title,
+        artist=song.artist,
+        language=song.language,
+        genre=song.genre,
+        difficulty=song.difficulty,
+        min_note=midi_to_note_name(song.min_midi),
+        max_note=midi_to_note_name(song.max_midi),
+        match_score=item.match_score,
+        transposition_semitones=item.transposition_semitones,
+        verified=song.verified,
+        source_note=song.source_note,
     )
 
 

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ResultsScreen } from "./ResultsScreen";
 import { texts } from "../../texts";
-import type { AnalyzeSessionResponse } from "../../types/analysis";
+import type { AnalyzeSessionResponse, SongRecommendation } from "../../types/analysis";
 
 const FORBIDDEN_PHRASES = [
   "kesin",
@@ -16,6 +16,24 @@ const FORBIDDEN_PHRASES = [
   "soprano",
   "alto",
 ];
+
+function makeRecommendation(overrides: Partial<SongRecommendation> = {}): SongRecommendation {
+  return {
+    id: "demo-001",
+    title: "Demo Şarkı 1",
+    artist: "Demo Sanatçı 1",
+    language: "tr",
+    genre: "pop",
+    difficulty: "kolay",
+    min_note: "A2",
+    max_note: "A3",
+    match_score: 90,
+    transposition_semitones: null,
+    verified: false,
+    source_note: "Demo veri — gerçek bir şarkı değildir.",
+    ...overrides,
+  };
+}
 
 function baseResult(overrides: Partial<AnalyzeSessionResponse> = {}): AnalyzeSessionResponse {
   return {
@@ -65,6 +83,7 @@ function baseResult(overrides: Partial<AnalyzeSessionResponse> = {}): AnalyzeSes
       summary:
         "Kaydında orta-düşük bölgede yoğunlaşan bir ses profili gözlemlendi. Bu değerler profesyonel bir ses türü teşhisi değildir.",
     },
+    recommendations: [],
     ...overrides,
   };
 }
@@ -145,6 +164,73 @@ describe("ResultsScreen — kabul edilen oturum", () => {
     await user.click(screen.getByRole("button", { name: texts.results.redoAll }));
 
     expect(onRestart).toHaveBeenCalledOnce();
+  });
+});
+
+describe("ResultsScreen — şarkı önerileri", () => {
+  it("öneri yoksa bölüm hiç gösterilmez", () => {
+    render(<ResultsScreen result={baseResult({ recommendations: [] })} onRestart={vi.fn()} onBackToReview={vi.fn()} />);
+
+    expect(screen.queryByText(texts.recommendations.title)).not.toBeInTheDocument();
+  });
+
+  it("öneri kartları başlık, sanatçı, tür, zorluk, aralık ve eşleşme yüzdesini gösterir", () => {
+    const recommendations = [makeRecommendation({ match_score: 82 })];
+    render(
+      <ResultsScreen result={baseResult({ recommendations })} onRestart={vi.fn()} onBackToReview={vi.fn()} />,
+    );
+
+    expect(screen.getByText(texts.recommendations.title)).toBeVisible();
+    expect(screen.getByText("Demo Şarkı 1")).toBeVisible();
+    expect(screen.getByText("Demo Sanatçı 1")).toBeVisible();
+    expect(screen.getByText(texts.recommendations.matchLabel(82))).toBeVisible();
+    expect(screen.getByText(texts.recommendations.rangeLabel("A2", "A3"))).toBeVisible();
+  });
+
+  it("doğrulanmamış (demo) şarkılarda 'Demo veri' rozeti gösterir", () => {
+    const recommendations = [makeRecommendation({ verified: false })];
+    render(
+      <ResultsScreen result={baseResult({ recommendations })} onRestart={vi.fn()} onBackToReview={vi.fn()} />,
+    );
+
+    expect(screen.getByText(texts.recommendations.demoBadge)).toBeVisible();
+  });
+
+  it("negatif transposition_semitones 'aşağıdan' ipucu gösterir", () => {
+    const recommendations = [makeRecommendation({ transposition_semitones: -2 })];
+    render(
+      <ResultsScreen result={baseResult({ recommendations })} onRestart={vi.fn()} onBackToReview={vi.fn()} />,
+    );
+
+    expect(screen.getByText(texts.recommendations.transposeDown(2))).toBeVisible();
+  });
+
+  it("pozitif transposition_semitones 'yukarıdan' ipucu gösterir", () => {
+    const recommendations = [makeRecommendation({ transposition_semitones: 3 })];
+    render(
+      <ResultsScreen result={baseResult({ recommendations })} onRestart={vi.fn()} onBackToReview={vi.fn()} />,
+    );
+
+    expect(screen.getByText(texts.recommendations.transposeUp(3))).toBeVisible();
+  });
+
+  it("zorluk filtresi yalnızca seçilen zorluktaki şarkıları gösterir", async () => {
+    const user = userEvent.setup();
+    const recommendations = [
+      makeRecommendation({ id: "a", title: "Demo Şarkı A", difficulty: "kolay" }),
+      makeRecommendation({ id: "b", title: "Demo Şarkı B", difficulty: "zor" }),
+    ];
+    render(
+      <ResultsScreen result={baseResult({ recommendations })} onRestart={vi.fn()} onBackToReview={vi.fn()} />,
+    );
+
+    expect(screen.getByText("Demo Şarkı A")).toBeVisible();
+    expect(screen.getByText("Demo Şarkı B")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: texts.recommendations.difficultyHard }));
+
+    expect(screen.queryByText("Demo Şarkı A")).not.toBeInTheDocument();
+    expect(screen.getByText("Demo Şarkı B")).toBeVisible();
   });
 });
 

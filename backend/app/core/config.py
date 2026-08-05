@@ -117,6 +117,19 @@ PROFILE_CENTER_MID_HIGH_MAX_MIDI = 64  # ~E4 altı → orta-yüksek merkezli; ü
 PROFILE_RANGE_NARROW_MAX_SEMITONES = 12  # 1 oktavdan dar
 PROFILE_RANGE_WIDE_MIN_SEMITONES = 19  # ~1.5 oktavdan geniş
 
+# ---------- Şarkı önerileri (bkz. CLAUDE.md bölüm 5) ----------
+# Bir şarkı kullanıcının aralığını en fazla bu kadar yarı ton aşıyorsa ton
+# değiştirme (transpoze) önerisi denenir. Bunun üstü "çok büyük fark" sayılır.
+TRANSPOSITION_MAX_SEMITONES = 3
+# Ton değiştirmeyle de kapatılamayan her kalan taşma yarı tonu, 100 üzerinden
+# eşleşme skorundan bu kadar puan kırar.
+OVERSHOOT_PENALTY_PER_SEMITONE = 8
+# Aynı aralık uyumunda daha zor bir şarkı hafifçe geride kalır (CLAUDE.md madde 5,
+# adım 6: "Zorluk seviyesini eşleşme skoruna dahil et").
+DIFFICULTY_SCORE_PENALTY: dict[str, int] = {"kolay": 0, "orta": 5, "zor": 10}
+# CLAUDE.md: "En uygun 5-10 sonucu sırala."
+MAX_RECOMMENDATIONS = 10
+
 
 class Settings(BaseSettings):
     """Ortam değişkenlerinden okunan uygulama ayarları."""

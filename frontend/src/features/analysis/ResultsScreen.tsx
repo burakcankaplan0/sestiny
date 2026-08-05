@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ScreenLayout } from "../../components/ScreenLayout";
 import { texts } from "../../texts";
 import type { AnalyzeSessionResponse } from "../../types/analysis";
+import { SongRecommendations } from "./SongRecommendations";
 import "./ResultsScreen.css";
 
 interface ResultsScreenProps {
@@ -112,6 +113,8 @@ export function ResultsScreen({ result, onRestart, onBackToReview }: ResultsScre
           )}
         </ResultCard>
       </div>
+
+      {result.recommendations.length > 0 && <SongRecommendations recommendations={result.recommendations} />}
 
       <section className="results__disclaimer" aria-labelledby="disclaimer-heading">
         <h2 id="disclaimer-heading" className="results__disclaimer-title">

@@ -9,10 +9,10 @@ bu profile uygun şarkılar önermeyi hedefleyen, web tabanlı bir uygulamadır.
 
 ## Durum
 
-🚧 Geliştirme aşamasında — **Aşama 5 (Sonuç ekranı) tamamlandı.**
-Uçtan uca akış çalışıyor: kayıt yap → analiz et → tahmini ses profilini gör.
-Şarkı önerileri henüz yok (bu Aşama 6'da gelecek — bkz. `docs/PROJECT_PLAN.md`).
-Geliştirme planı için `docs/PROJECT_PLAN.md` dosyasına bakın.
+🚧 Geliştirme aşamasında — **Aşama 6 (Şarkı önerileri) tamamlandı.**
+Uçtan uca akış çalışıyor: kayıt yap → analiz et → tahmini ses profilini ve
+sana uygun demo şarkı önerilerini gör. Geliştirme planı için
+`docs/PROJECT_PLAN.md` dosyasına bakın.
 
 ## Nasıl çalışır?
 
