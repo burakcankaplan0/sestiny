@@ -7,7 +7,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import health
+from app.api import analysis, health
 from app.core.config import API_V1_PREFIX, get_settings
 from app.core.logging import configure_logging, get_logger
 
@@ -35,6 +35,7 @@ def create_app() -> FastAPI:
     )
 
     application.include_router(health.router, prefix=API_V1_PREFIX)
+    application.include_router(analysis.router, prefix=API_V1_PREFIX)
 
     logger.info("Sestiny API hazır. İzinli origin'ler: %s", settings.allowed_origins_list)
     return application

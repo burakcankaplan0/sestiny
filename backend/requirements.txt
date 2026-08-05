@@ -1,14 +1,17 @@
 # Sestiny backend bağımlılıkları
 #
-# Not: Ses analizi kütüphaneleri (librosa, numpy, scipy, soundfile, av) burada yok.
-# Kullanılmayan bağımlılık bırakmama kuralı gereği Aşama 3/4'te gerçekten
-# kullanılmaya başlandıklarında eklenecekler.
+# Not: librosa/scipy/soundfile henüz yok — pitch analizi Aşama 4'te eklenecek.
+# av + numpy Aşama 3'te ses format dönüştürme ve kalite kontrolü için eklendi.
 
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 pydantic==2.10.4
 pydantic-settings==2.7.0
 python-multipart==0.0.20
+
+# Ses format dönüştürme ve kalite kontrolü (Aşama 3)
+av==18.0.0
+numpy==2.5.1
 
 # Test
 pytest==8.3.4

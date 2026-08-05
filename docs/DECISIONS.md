@@ -154,3 +154,50 @@ Kayıt kalitesi kontrolü (RMS, clipping, sessizlik) backend'in işi (Aşama 3);
 ama süre kontrolü tamamen istemci tarafında, anında yapılabilecek bir kontrol.
 **Karar:** İstemci yalnızca "kayıt en az min saniye mi" kontrolü yapar; daha
 gelişmiş kalite kontrolleri backend'e bırakılır, burada tekrarlanmaz.
+
+---
+
+## Aşama 3 — 2026-08-05
+
+### K-023: Ses format dönüştürme için FFmpeg değil PyAV kullanılıyor
+K-007'de iki seçenek bırakılmıştı: sistem geneline FFmpeg kurmak veya PyAV
+(pip paketi, ffmpeg kütüphanelerini kendi içinde taşır) kullanmak.
+Gerçek bir tarayıcı kaydına en yakın senaryo olan WebM/Opus dosyasıyla PyAV
+denendi: kodlama + çözme + 22.050 Hz'e yeniden örnekleme sorunsuz çalıştı
+(bkz. test: `test_unsupported_format_is_rejected` ve canlı sunucuda WebM/Opus ile
+yapılan manuel HTTP testi).
+**Karar:** PyAV kullanılıyor. Sisteme FFmpeg kurulmadı, kurulmayacak — bu,
+"sistem geneline kurulum" izni gerektirmeyen daha basit çözüm.
+
+### K-024: Dosya formatı, MIME/uzantıya değil gerçek çözümlemeye göre doğrulanıyor
+CLAUDE.md açıkça "MIME türü tek başına güvenilir kabul edilmemeli" ve "dosya
+uzantısına tek başına güvenilmemeli" diyor.
+**Karar:** Ayrıca bir magic-byte kontrolü yazmak yerine, dosya doğrudan PyAV ile
+açılmaya çalışılıyor; açılamıyorsa veya ses akışı yoksa reddediliyor. Bu, sahte
+uzantılı veya bozuk dosyaları da gerçek şekilde eler — sahte bir "İyi" sonuca
+göre değil, gerçek çözümlemeye göre karar verilir.
+
+### K-025: Kalite kontrolü tek bir 0-100 skora ve kabul/ret kararına indirgeniyor
+CLAUDE.md'nin örnek JSON şemasında session genelinde tek bir `quality` nesnesi
+var; ama Aşama 3'te henüz pitch analizi yok, dolayısıyla "profile" veya
+"recommendations" gibi sonraki aşamalara ait alanları şimdiden boş/sahte
+doldurmak "yarım bırakılmış kod" olurdu.
+**Karar:** Şu an her test kaydı için ayrı bir `FileQualityReport` (accepted,
+overall_score, label, warnings, duration_seconds) döndürülüyor. Oturum geneli
+tek bir `quality` özeti, gerçek pitch/profil verisi ortaya çıkınca Aşama 4/5'te
+`profile_builder.py` ile eklenecek — CLAUDE.md'deki tam şema o zaman tamamlanmış olacak.
+
+### K-026: Uyarı mesajları CLAUDE.md'deki örnek cümlelerle birebir aynı
+Bölüm 12'de sade Türkçe örnek uyarı cümleleri veriliyor ("Kayıt çok kısa
+görünüyor.", "Ses zaman zaman bozulmuş veya kesilmiş görünüyor." vb.).
+**Karar:** Kod bu cümleleri aynen kullanıyor; yeni/farklı ifadeler icat
+edilmedi. Testler de bu cümlelerin doğru koşulda çıktığını doğruluyor.
+
+### K-027: Aşırı büyük dosya HTTP 413 ile, kalite sorunları ise 200 + `rejected` ile bildiriliyor
+İkisi farklı türde durumlar: aşırı büyük dosya bir güvenlik/kaynak koruma
+konusu (saldırı senaryosu da olabilir), kalite sorunu ise geçerli bir kaydın
+sonuçlarının yetersiz çıkması (normal kullanıcı senaryosu).
+**Karar:** Boyut sınırı aşımı `HTTPException(413)` ile sert biçimde kesiliyor
+(dosya hiç işlenmeden). Format/süre/ses seviyesi gibi kalite sorunları ise HTTP
+200 ile, `status: "rejected"` ve testin kendi `warnings` listesiyle
+bildiriliyor — böylece tek bir response şekli her durumda kullanılabiliyor.

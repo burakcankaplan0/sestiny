@@ -200,3 +200,69 @@ nokta" artık kapandı — uçtan uca kayıt akışı gerçek bir cihazda çalı
 ### Sonraki adım
 
 Aşama 3 (Dosya yükleme ve kalite kontrolü) — kullanıcının "devam" onayı bekleniyor.
+
+---
+
+## Aşama 3 — Dosya Yükleme ve Kalite Kontrolü · 2026-08-05 · ✅ Tamamlandı
+
+Bu aşama yalnızca backend'i kapsıyor (CLAUDE.md'de Aşama 3 için frontend
+bağlantısı istenmiyor). "Analiz et" butonu hâlâ backend'e istek atmıyor; bu
+Aşama 4/5'te bağlanacak. Henüz pitch/perde analizi yok — yalnızca kayıt kalitesi.
+
+### Yeni bağımlılıklar
+
+`av==18.0.0` (PyAV — ffmpeg kütüphanelerini pip paketinin içinde taşır, sisteme
+ayrıca FFmpeg kurulmadı) ve `numpy==2.5.1`. İkisi de gerçek WebM/Opus dosyasıyla
+denenip doğrulandı (bkz. K-023).
+
+### Eklenen dosyalar
+
+| Dosya | İçerik |
+| --- | --- |
+| `app/services/audio_conversion.py` | Herhangi bir ses formatını PyAV ile mono/22.050 Hz float diziye çevirir; çözülemeyen dosyayı `UnsupportedAudioError` ile işaretler |
+| `app/services/audio_quality.py` | Süre, RMS, peak, clipping oranı, sessizlik oranı hesaplar; eşiklerle karşılaştırıp kabul/ret + 0-100 skor + Türkçe uyarı listesi üretir |
+| `app/schemas/analysis.py` | `FileQualityReport`, `AnalyzeSessionResponse` Pydantic modelleri |
+| `app/api/analysis.py` | `POST /api/v1/analyze-session` — üç dosyayı güvenli geçici dosyalara yazar, boyut sınırını akış sırasında denetler, her birini değerlendirir, işlem bitince (başarılı/başarısız fark etmez) geçici dosyaları siler |
+| `app/core/config.py` | Süre/RMS/clipping/sessizlik eşikleri, hedef örnekleme oranı — hepsi açıklamalı sabitler |
+
+### Kapsanan gereksinimler (CLAUDE.md Aşama 3)
+
+- ✅ `POST /api/v1/analyze-session`, üç dosya multipart olarak alınıyor
+- ✅ Format doğrulama gerçek çözümlemeyle yapılıyor (MIME/uzantıya güvenilmiyor, bkz. K-024)
+- ✅ Dosya boyutu sınırı akış sırasında denetleniyor, aşılırsa 413
+- ✅ Geçici dosyalar rastgele adlarla oluşturuluyor, işlem bitince (`finally` içinde) her zaman siliniyor
+- ✅ Süre, sessizlik (RMS tabanlı pencere analizi), clipping oranı kontrol ediliyor
+- ✅ Kötü kayıtlar CLAUDE.md'deki örnek Türkçe uyarı cümleleriyle reddediliyor (bkz. K-026)
+- ⏸️ Arka plan gürültüsü tahmini eklenmedi — güvenilir biçimde yapmak pitch/voice-activity bilgisi gerektiriyor, bu Aşama 4'e bırakıldı
+
+### Testler — hepsi geçiyor
+
+| Test | Sonuç |
+| --- | --- |
+| Backend (pytest) | ✅ **13/13** (5 mevcut health testi + 8 yeni analiz testi) |
+
+Yeni testler (`tests/test_analysis.py`, sentetik seslerle): geçerli kayıtların
+kabul edilmesi, desteklenmeyen format reddi, çok kısa kayıt reddi, sessiz kayıt
+reddi, bozuk/clip'li kayıt reddi, aşırı büyük dosyanın 413 ile reddi, geçici
+dosyaların temizlendiğinin doğrulanması, response şemasının doğruluğu.
+
+### Gerçek dosyayla doğrulama
+
+Sentetik testlere ek olarak, gerçek tarayıcı formatına en yakın senaryo canlı
+sunucuda elle denendi: PyAV ile kodlanmış 2 saniyelik bir WebM/Opus dosyası
+`curl` ile üç alana da gönderildi. Sonuç doğru çıktı: konuşma ve kaydırma
+testleri (minimum 3 saniye) reddedildi, uzun "A" testi (minimum 2 saniye) kabul
+edildi — eşik mantığı gerçek bir ses dosyasıyla teyit edildi.
+
+### Kabul kriterleri
+
+| Kriter | Durum |
+| --- | --- |
+| Üç kayıt backend'e ulaşıyor | ✅ |
+| Geçerli kayıt kabul ediliyor | ✅ |
+| Geçersiz kayıt doğru reddediliyor | ✅ |
+| Geçici dosyalar temizleniyor | ✅ (otomatik testle doğrulandı) |
+
+### Sonraki adım
+
+Aşama 4 (Ses analizi — pitch/nota tespiti) — kullanıcının "devam" onayı bekleniyor.
