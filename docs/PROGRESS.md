@@ -596,3 +596,66 @@ geliştirme aşamasında).
 
 Aşama 8 (Yayına hazırlık) — yalnızca kullanıcı ayrıca ve açıkça onay verirse
 başlanacak. Onay gelmezse proje mevcut hâliyle (Aşama 7 sonu) tamamlanmış sayılır.
+
+---
+
+## Gerçek şarkı verisi — 2026-08-05 · ✅ Tamamlandı
+
+Aşama 6'da bilinçli olarak ertelenen ("gerçek şarkı listesi daha sonra
+doğrulanmış verilerle eklenecektir") iş, kullanıcı isteğiyle şimdi yapıldı.
+Bu, planın 8 aşamasından hiçbirine bağlı değil — bağımsız bir iş.
+
+### Yapılanlar
+
+`singingcarrots.com` (halka açık vokal aralığı veritabanı) üzerinde araştırma
+yapılıp **16 gerçek şarkı** bulundu, her biri gösterilebilir bir kaynak
+URL'iyle `backend/app/data/verified_songs.json`'a eklendi (`verified: true`).
+`recommendation.py`'nin `load_songs()` fonksiyonu artık demo (12) ve gerçek
+(16) şarkıları birleştirip tek bir havuzda (28 şarkı) puanlıyor.
+
+**Kapsanan şarkılar:** Johnny Cash (I Walk the Line, Folsom Prison Blues),
+Elvis Presley (Can't Help Falling in Love), Nat King Cole (Autumn Leaves),
+Rufus Wainwright (Hallelujah), Marvin Gaye (Ain't No Mountain High Enough),
+Linkin Park (What I've Done), Ed Sheeran (Shape of You, Perfect), Halsey
+(Colors), Adele (Rolling in the Deep, Someone Like You), Celine Dion (My
+Heart Will Go On), Celtic Woman (You Raise Me Up), Wings (Mull of Kintyre),
+Queen (Bohemian Rhapsody).
+
+### Açıkça belirtilmesi gereken sınırlama
+
+**Türkçe şarkı bulunamadı.** Kullanılan kaynak (singingcarrots.com) Batı
+müziği ağırlıklı; Türkçe şarkılar için hiçbir arama sonuç vermedi. Kullanıcı
+onayıyla ("kaynak yoksa atla") bu boşluk uydurma veriyle doldurulmadı — 16
+şarkının hepsi İngilizce (`language: "en"`). Türkçe gerçek şarkı eklemek
+istenirse ayrı, güvenilir bir Türkçe kaynak bulunması gerekiyor.
+
+### Veri dürüstlüğü
+
+- Her şarkının `source_note` alanı gerçek bir URL içeriyor (test:
+  `test_every_verified_song_is_marked_verified_with_a_real_source`)
+- Zorluk seviyesi, kaynakta sayısal olarak bulunamadığı için nota aralığı
+  genişliğinden şeffaf bir kuralla hesaplandı — bu `source_note`'ta açıkça
+  belirtildi (K-048)
+- Hiçbir şarkı hafızadan/tahminden eklenmedi
+
+### Testler
+
+| Test dosyası | Sonuç |
+| --- | --- |
+| Mevcut testler | ✅ 46/46 (1 test güncellendi — artık `verified: true` öneri de gelebileceği için) |
+| `test_recommendation.py` (yeni `TestVerifiedSongs` sınıfı) | ✅ 5/5 (en az 1 gerçek şarkı var, her birinin gerçek kaynağı var, aralıklar tutarlı, havuz doğru birleşiyor, gerçek şarkı üst sıralarda çıkabiliyor) |
+| **Backend toplam** | **✅ 51/51** |
+
+Frontend'de hiçbir değişiklik gerekmedi — "Demo veri" rozeti zaten `verified`
+alanına göre otomatik gösteriliyor/gizleniyordu (K-042), gerçek şarkılarda
+kendiliğinden görünmüyor.
+
+### Gerçek dosyayla doğrulama
+
+Canlı sunucuya gerçek bir WebM dosyasıyla istek atıldı: cevapta hem demo hem
+gerçek şarkılar (Elvis Presley, Nat King Cole, Marvin Gaye, Ed Sheeran) karışık
+ve doğru skorla sıralı geldi.
+
+### Sonraki adım
+
+Aşama 8 (Yayına hazırlık) — hâlâ yalnızca ayrıca açık onayla başlanacak.

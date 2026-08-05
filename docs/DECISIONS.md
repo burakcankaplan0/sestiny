@@ -402,3 +402,36 @@ tarayıcıda çalışması beklenen bir davranıştır, ancak burada kesin olara
 kanıtlanamadı. README'nin manuel test kontrol listesine eklendi; kullanıcının
 kendi tarayıcısında bir kez denemesi önerilir. Uydurma bir "doğrulandı"
 iddiası yapılmadı (CLAUDE.md: doğrulanamayan şey açıkça belirtilir).
+
+---
+
+## Gerçek şarkı verisi (Aşama 6'nın devamı, plan dışı ek iş) — 2026-08-05
+
+### K-047: Gerçek şarkıların nota aralığı yalnızca web'de bulunan, gösterilebilir bir kaynaktan alındı
+CLAUDE.md'nin en katı veri dürüstlüğü kuralı: "gerçek şarkıların nota aralıkları
+uydurulmaz." Bu, bir şarkının nota aralığını hafızadan/tahminden yazmanın
+kesinlikle yasak olduğu anlamına geliyor — model hafızası güvenilir bir kaynak
+değildir.
+**Karar:** `singingcarrots.com` (halka açık, vokal eğitimi amaçlı bir şarkı
+vokal aralığı veritabanı) üzerinde `WebSearch`/`WebFetch` ile 16 popüler şarkı
+arandı; her biri için sitenin kendi şarkı sayfası veya aralık listeleme
+sayfası `source_note` alanına URL olarak kaydedildi. Kaynakta bulunamayan
+hiçbir şarkı listeye eklenmedi (kullanıcı onayıyla: "kaynak yoksa atla").
+Türkçe şarkılar için bu kaynakta veri bulunamadı — bu açıkça belirtildi,
+uydurma bir Türkçe liste oluşturulmadı.
+
+### K-048: Zorluk seviyesi, gerçek şarkılarda da nota aralığı genişliğinden otomatik hesaplandı
+Kaynak site zorluk derecesini görsel bir gösterge olarak sunuyordu (sayısal
+değer API/metin olarak çekilemedi). Elle tahmin etmek yerine, demo şarkılarla
+tutarlı ve şeffaf bir kural kullanıldı: ≤13 yarı ton "kolay", 14-19 "orta",
+≥20 "zor". Bu, her şarkının `source_note` alanında açıkça belirtildi —
+"kaynak sitede zorluk ayrıca listelenmemiştir" notuyla.
+
+### K-049: Gerçek şarkılar demo şarkıların yerine geçmedi, aynı havuza eklendi
+Demo verisi (`demo_songs.json`, 12 kayıt) hâlâ geniş bir MIDI aralığını
+sistematik olarak kapsıyor ve test/geliştirme için değerli.
+**Karar:** Yeni `verified_songs.json` (16 gerçek şarkı) ayrı bir dosyada
+tutuldu; `recommendation.py`'deki `load_songs()` ikisini birleştirip tek bir
+öneri havuzu oluşturuyor. Frontend'de zaten var olan `verified` alanına göre
+rozet gösterme mantığı (K-042) hiçbir değişiklik gerektirmeden gerçek
+şarkılarda "Demo veri" rozetini otomatik gizliyor.

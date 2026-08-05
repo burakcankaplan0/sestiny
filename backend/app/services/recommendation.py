@@ -1,8 +1,12 @@
-"""Demo şarkı verisiyle basit aralık eşleştirme.
+"""Şarkı verisiyle basit aralık eşleştirme.
 
 Gerçek şarkı nota aralıkları uydurulmaz (bkz. CLAUDE.md veri dürüstlüğü kuralları).
-Burada yalnızca açıkça kurgu "Demo Şarkı" kayıtları kullanılır (`verified: false`);
-gerçek/doğrulanmış şarkı listesi ileride bu dosyanın yerini alacak veya ona eklenecek.
+İki veri dosyası birleştirilerek kullanılır:
+- `demo_songs.json`: açıkça kurgu "Demo Şarkı" kayıtları (`verified: false`) —
+  test/geliştirme amaçlı, geniş bir MIDI aralığını sistematik olarak kapsar.
+- `verified_songs.json`: gerçek şarkılar (`verified: true`); her birinin nota
+  aralığı, `source_note` alanında belirtilen dış bir kaynaktan alınmıştır
+  (bkz. docs/DECISIONS.md K-047) — hiçbir değer hafızadan/tahminden yazılmadı.
 """
 
 import json
@@ -17,7 +21,9 @@ from app.core.config import (
     TRANSPOSITION_MAX_SEMITONES,
 )
 
-DEMO_SONGS_PATH = Path(__file__).resolve().parent.parent / "data" / "demo_songs.json"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+DEMO_SONGS_PATH = DATA_DIR / "demo_songs.json"
+VERIFIED_SONGS_PATH = DATA_DIR / "verified_songs.json"
 
 
 @dataclass(frozen=True)
@@ -44,11 +50,27 @@ class SongRecommendation:
     transposition_semitones: int | None
 
 
+def _load_songs_from(path: Path) -> list[Song]:
+    raw_entries = json.loads(path.read_text(encoding="utf-8"))
+    return [Song(**entry) for entry in raw_entries]
+
+
 @lru_cache
 def load_demo_songs() -> list[Song]:
-    """demo_songs.json'u okuyup Song listesine çevirir. Sonucu önbelleğe alır."""
-    raw_entries = json.loads(DEMO_SONGS_PATH.read_text(encoding="utf-8"))
-    return [Song(**entry) for entry in raw_entries]
+    """Yalnızca demo_songs.json'u okur (verified=false). Sonucu önbelleğe alır."""
+    return _load_songs_from(DEMO_SONGS_PATH)
+
+
+@lru_cache
+def load_verified_songs() -> list[Song]:
+    """Yalnızca verified_songs.json'u okur (verified=true, dış kaynaklı). Sonucu önbelleğe alır."""
+    return _load_songs_from(VERIFIED_SONGS_PATH)
+
+
+@lru_cache
+def load_songs() -> list[Song]:
+    """Öneri havuzu: demo + doğrulanmış gerçek şarkılar birlikte. Sonucu önbelleğe alır."""
+    return load_demo_songs() + load_verified_songs()
 
 
 def _overshoot(song_low: int, song_high: int, user_low: int, user_high: int, shift: int) -> int:
@@ -108,8 +130,8 @@ def get_recommendations(
     user_high_midi: int,
     limit: int = MAX_RECOMMENDATIONS,
 ) -> list[SongRecommendation]:
-    """Tüm demo şarkıları puanlar, en iyi eşleşenden başlayarak sıralar."""
-    songs = load_demo_songs()
+    """Havuzdaki tüm şarkıları (demo + doğrulanmış) puanlar, en iyi eşleşenden başlayarak sıralar."""
+    songs = load_songs()
     scored = [score_song(song, user_low_midi, user_high_midi) for song in songs]
     scored.sort(key=lambda item: item.match_score, reverse=True)
     return scored[:limit]

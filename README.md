@@ -9,10 +9,12 @@ bu profile uygun şarkılar önermeyi hedefleyen, web tabanlı bir uygulamadır.
 
 ## Durum
 
-✅ **Aşama 7 (Kalite, test, dokümantasyon) tamamlandı.** Uçtan uca akış
-çalışıyor: kayıt yap → analiz et → tahmini ses profilini ve sana uygun demo
-şarkı önerilerini gör. 46 backend + 33 frontend testi geçiyor. Kalan tek
-aşama olan **Aşama 8 (Yayına hazırlık)**, yalnızca ayrıca açık onay verilirse
+✅ **Aşama 7 (Kalite, test, dokümantasyon) tamamlandı**, ardından gerçek şarkı
+verisi eklendi. Uçtan uca akış çalışıyor: kayıt yap → analiz et → tahmini ses
+profilini ve sana uygun şarkı önerilerini gör — artık 12 demo kaydın yanında
+16 gerçek, kaynaklı şarkı da (`singingcarrots.com`'dan) öneriliyor. 51 backend
++ 33 frontend testi geçiyor. Kalan tek aşama olan **Aşama 8 (Yayına hazırlık)**,
+yalnızca ayrıca açık onay verilirse
 başlar — bkz. `docs/PROJECT_PLAN.md`.
 
 ## Nasıl çalışır?
@@ -115,9 +117,11 @@ harici bir sunucuya veri gönderimi yoktur; her şey kendi bilgisayarında çal�
   algılama); kod bunu büyük ölçüde filtreler ama tamamen ortadan kaldırmaz.
 - Stabilite skoru ve tahmini profil kategorileri (K-013, bölüm 13/4) **klinik
   veya bilimsel bir standarda dayanmaz** — deneyimsel başlangıç eşikleridir.
-- Şarkı önerileri, gerçek doğrulanmış veri eklenene kadar yalnızca 12 demo
-  ("Demo Şarkı 1", "Demo Şarkı 2"...) kayıt üzerinden çalışır; gerçek bir müzik
-  kütüphanesi değildir.
+- Şarkı önerileri 12 demo kayıt ("Demo Şarkı 1", "Demo Şarkı 2"...) ve
+  `singingcarrots.com` kaynaklı 16 gerçek şarkıdan (`verified: true`, her
+  birinin kaynağı `source_note` alanında) oluşan küçük bir havuzdan geliyor —
+  kapsamlı bir müzik kütüphanesi değil. **Türkçe gerçek şarkı yok**: kullanılan
+  kaynakta Türkçe şarkı verisi bulunamadı, uydurma bir liste oluşturulmadı.
 - Uygulama yalnızca güncel Chrome/Edge/Safari gibi `MediaRecorder` ve
   `getUserMedia` destekleyen tarayıcılarda çalışır; eski tarayıcılarda anlaşılır
   bir "desteklenmiyor" mesajı gösterilir ama kayıt yapılamaz.

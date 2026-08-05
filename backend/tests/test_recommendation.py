@@ -5,7 +5,14 @@ CLAUDE.md Aşama 6 kabul kriterlerini doğrudan karşılar: demo verilerden tuta
 matematiksel olarak doğru, demo veriler gerçek/doğrulanmış gibi sunulmuyor.
 """
 
-from app.services.recommendation import Song, get_recommendations, load_demo_songs, score_song
+from app.services.recommendation import (
+    Song,
+    get_recommendations,
+    load_demo_songs,
+    load_songs,
+    load_verified_songs,
+    score_song,
+)
 
 
 def _song(
@@ -129,3 +136,36 @@ class TestGetRecommendations:
     def test_returns_at_most_ten_results_by_default(self):
         results = get_recommendations(user_low_midi=40, user_high_midi=76)
         assert len(results) <= 10
+
+
+class TestVerifiedSongs:
+    """Gerçek, dış kaynaklı şarkı verisi (verified_songs.json) için doğruluk testleri."""
+
+    def test_at_least_one_verified_song_exists(self):
+        assert len(load_verified_songs()) > 0
+
+    def test_every_verified_song_is_marked_verified_with_a_real_source(self):
+        for song in load_verified_songs():
+            assert song.verified is True
+            # source_note uydurma olmadığını göstermek için gerçek bir URL içermeli.
+            assert "http" in song.source_note, f"{song.title}: source_note bir kaynak URL'i içermeli"
+
+    def test_verified_song_ranges_are_internally_consistent(self):
+        for song in load_verified_songs():
+            assert song.min_midi < song.max_midi, f"{song.title}: min_midi max_midi'den küçük olmalı"
+            # Makul bir insan sesi aralığı dışına taşan bir değer, veri girişi hatasına işaret eder.
+            assert 24 <= song.min_midi <= 96
+            assert 24 <= song.max_midi <= 96
+
+    def test_load_songs_combines_demo_and_verified_pools(self):
+        combined = load_songs()
+        assert len(combined) == len(load_demo_songs()) + len(load_verified_songs())
+
+    def test_recommendation_pool_can_include_verified_songs(self):
+        """Kullanıcı aralığına iyi uyan gerçek bir şarkı, ilk 10 sonuç içinde çıkabilmeli.
+
+        50-70 MIDI aralığı, birkaç gerçek şarkıyla (ör. "Perfect" 55-68, "Colors" 56-68)
+        tam örtüşüyor — bunlar 100 skor alıp üst sıralarda yer almalı.
+        """
+        results = get_recommendations(user_low_midi=50, user_high_midi=70)
+        assert any(item.song.verified for item in results)

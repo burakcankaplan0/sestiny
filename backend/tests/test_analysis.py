@@ -245,14 +245,16 @@ def test_rejected_recording_does_not_get_fabricated_pitch_fields():
 
 
 def test_valid_session_produces_song_recommendations():
-    """Kabul edilen oturumda demo şarkı önerileri üretilir, gerçek şarkı gibi sunulmaz."""
+    """Kabul edilen oturumda şarkı önerileri üretilir; demo olanlar gerçek şarkı gibi sunulmaz."""
     response = client.post(f"{API_V1_PREFIX}/analyze-session", files=_valid_session_files())
     body = response.json()
 
     assert len(body["recommendations"]) > 0
     for recommendation in body["recommendations"]:
-        assert recommendation["verified"] is False
-        assert recommendation["title"].startswith("Demo Şarkı")
+        # verified=false olan öneriler yalnızca açıkça kurgu "Demo Şarkı" adlı olabilir;
+        # verified=true olanlar (gerçek, kaynaklı şarkılar) bu kısıtlamaya tabi değil.
+        if not recommendation["verified"]:
+            assert recommendation["title"].startswith("Demo Şarkı")
         assert 0 <= recommendation["match_score"] <= 100
         assert recommendation["min_note"] and recommendation["max_note"]
 
