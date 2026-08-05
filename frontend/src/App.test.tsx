@@ -261,6 +261,31 @@ describe("Ses kaydı akışı", () => {
   });
 });
 
+/** Mikrofon iznini alır, üç testi de gerçek zamanda kaydedip inceleme ekranına ulaşır. */
+async function completeAllRecordingsAndReachReview(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole("button", { name: texts.app.startButton }));
+  await user.click(await screen.findByRole("button", { name: texts.microphone.grantButton }));
+  await user.click(await screen.findByRole("button", { name: texts.microphone.continueButton }));
+
+  // Üç testi de sırayla kaydet; her kaydı, o testin minimum süresini karşılayacak kadar bekletiyoruz
+  // (gerçek zaman kullanıyoruz — sahte zamanlayıcı, user-event + çoklu findBy adımlarını kırılgan yapardı).
+  for (const test of VOICE_TESTS) {
+    await user.click(screen.getByRole("button", { name: texts.voiceTest.startButton }));
+    await sleep((test.minSeconds + 0.5) * 1000);
+    await user.click(screen.getByRole("button", { name: texts.voiceTest.stopButton }));
+
+    const continueButton = await screen.findByRole("button", {
+      name: (name) => name === texts.voiceTest.nextTest || name === texts.voiceTest.goToReview,
+    });
+    expect(continueButton).toBeEnabled();
+    await user.click(continueButton);
+  }
+
+  const analyzeButton = await screen.findByRole("button", { name: texts.review.analyzeButton });
+  expect(analyzeButton).toBeEnabled();
+  return analyzeButton;
+}
+
 describe("Uçtan uca analiz akışı", () => {
   it(
     "üç test kaydedilip 'Analiz et'e basılınca sonuç ekranı backend verisini doğru kartlara yerleştirir",
@@ -271,27 +296,7 @@ describe("Uçtan uca analiz akışı", () => {
 
       render(<App />);
 
-      await user.click(await screen.findByRole("button", { name: texts.app.startButton }));
-      await user.click(await screen.findByRole("button", { name: texts.microphone.grantButton }));
-      await user.click(await screen.findByRole("button", { name: texts.microphone.continueButton }));
-
-      // Üç testi de sırayla kaydet; her kaydı, o testin minimum süresini karşılayacak kadar bekletiyoruz
-      // (gerçek zaman kullanıyoruz — sahte zamanlayıcı, user-event + çoklu findBy adımlarını kırılgan yapardı).
-      for (const test of VOICE_TESTS) {
-        await user.click(screen.getByRole("button", { name: texts.voiceTest.startButton }));
-        await sleep((test.minSeconds + 0.5) * 1000);
-        await user.click(screen.getByRole("button", { name: texts.voiceTest.stopButton }));
-
-        const continueButton = await screen.findByRole("button", {
-          name: (name) => name === texts.voiceTest.nextTest || name === texts.voiceTest.goToReview,
-        });
-        expect(continueButton).toBeEnabled();
-        await user.click(continueButton);
-      }
-
-      // İnceleme ekranı.
-      const analyzeButton = await screen.findByRole("button", { name: texts.review.analyzeButton });
-      expect(analyzeButton).toBeEnabled();
+      const analyzeButton = await completeAllRecordingsAndReachReview(user);
       await user.click(analyzeButton);
 
       // Sonuç ekranı — backend verisi Türkçe kartlara doğru yerleşmiş olmalı.
@@ -313,6 +318,59 @@ describe("Uçtan uca analiz akışı", () => {
 
       // Ham backend alan adları veya teknik jargon sızmamalı.
       expect(screen.queryByText(/median_f0_hz|observed_low_midi|session_id/)).not.toBeInTheDocument();
+    },
+    20000,
+  );
+});
+
+describe("Analiz sırasında hata durumu", () => {
+  it(
+    "sunucu hatasında anlaşılır mesaj gösterir; 'Tekrar dene' yeniden dener, 'İncelemeye dön' geri götürür",
+    async () => {
+      const user = userEvent.setup();
+      stubMicrophoneSupport();
+      const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.includes("/analyze-session")) {
+          return new Response("sunucu hatası", { status: 500 });
+        }
+        return new Response(JSON.stringify({ status: "ok", message: "Backend bağlantısı başarılı" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      });
+
+      render(<App />);
+
+      const analyzeButton = await completeAllRecordingsAndReachReview(user);
+      await user.click(analyzeButton);
+
+      expect(await screen.findByText(texts.errors.server)).toBeVisible();
+      // Ham HTTP kodu veya "sunucu hatası" gövdesi kullanıcıya sızmamalı.
+      expect(screen.queryByText(/500/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/sunucu hatası/)).not.toBeInTheDocument();
+
+      // "İncelemeye dön" — kayıtlar korunarak inceleme ekranına geri döner.
+      await user.click(screen.getByRole("button", { name: texts.results.backToReview }));
+      expect(await screen.findByRole("heading", { level: 1, name: texts.review.title })).toBeVisible();
+
+      // Tekrar "Analiz et"e bas, bu sefer backend başarılı dönsün.
+      fetchMock.mockImplementation(async (input) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.includes("/analyze-session")) {
+          return new Response(JSON.stringify(ACCEPTED_ANALYSIS_RESPONSE), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({ status: "ok", message: "Backend bağlantısı başarılı" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      });
+      await user.click(screen.getByRole("button", { name: texts.review.analyzeButton }));
+
+      expect(await screen.findByRole("heading", { level: 1, name: texts.results.title })).toBeVisible();
     },
     20000,
   );

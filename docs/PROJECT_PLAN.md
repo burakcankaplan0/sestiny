@@ -144,7 +144,7 @@ Her aşama sonunda **durulur ve kullanıcının "devam" onayı beklenir**.
 | 4 | librosa pitch analizi, profil oluşturma, sentetik ses testleri | ✅ Tamamlandı |
 | 5 | Sonuç ekranı (Türkçe kartlar, uyarı metni, düşük güven durumları) | ✅ Tamamlandı |
 | 6 | Demo şarkı verisi, eşleştirme algoritması, öneri kartları | ✅ Tamamlandı |
-| 7 | Testler, erişilebilirlik, mobil kontrol, kod temizliği, dokümantasyon | ⬜ |
+| 7 | Testler, erişilebilirlik, mobil kontrol, kod temizliği, dokümantasyon | ✅ Tamamlandı |
 | 8 | Yayına hazırlık — **yalnızca ayrıca açık onay verilirse** | ⬜ |
 
 ### Aşama kabul kriterleri

@@ -34,6 +34,7 @@ export function RecordingsReview({ recordings, onReRecord, onAnalyze }: Recordin
                   className="voice-test__player"
                   controls
                   src={recording.url}
+                  aria-label={texts.voiceTest.playbackLabel(test.title)}
                   data-testid={`review-audio-${test.id}`}
                 />
               )}

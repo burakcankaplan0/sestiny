@@ -16,8 +16,12 @@ numpy==2.5.1
 
 # Pitch/perde analizi (Aşama 4)
 librosa==0.11.0
+# Kodumuzda scipy doğrudan import edilmez, ama librosa.pyin çalışma zamanında
+# ona ihtiyaç duyar (kaldırılırsa pyin çağrıları hata verir) — bu yüzden
+# örtük/geçişli bir bağımlılık değil, açıkça pinlenmiş bir gereksinimdir.
 scipy==1.18.0
 
 # Test
 pytest==8.3.4
+# httpx doğrudan import edilmez; FastAPI'nin TestClient'ı arka planda onu kullanır.
 httpx==0.28.1

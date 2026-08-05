@@ -69,6 +69,7 @@ export const texts = {
     nextTest: "Sonraki test",
     goToReview: "İncelemeye geç",
     backToReview: "İncelemeye dön",
+    playbackLabel: (testTitle: string) => `${testTitle} kaydını dinle`,
   },
 
   review: {

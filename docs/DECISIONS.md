@@ -358,3 +358,47 @@ kartında görünür bir "Demo veri" rozeti gösteriyor ve bölüm girişinde "g
 doğrulanmış bir şarkı listesi değildir" uyarısı var. Test edildi (backend:
 `test_demo_songs_are_never_marked_as_verified`, `test_demo_songs_use_clearly_fictional_names`;
 frontend: demo rozeti render testi).
+
+---
+
+## Aşama 7 — 2026-08-05
+
+### K-043: `scipy` requirements.txt'de kaldı — kaldırılmayı deneyip gerçekten gerekli olduğu doğrulandı
+Kod temizliği taraması sırasında `scipy`'nin hiçbir dosyada doğrudan
+`import` edilmediği görüldü ve "kullanılmayan bağımlılık" şüphesiyle
+kaldırılmayı denendi.
+**Karar:** `pip uninstall scipy` sonrası test paketi 20 testte çöktü —
+`librosa.pyin` çalışma zamanında `scipy`'ye ihtiyaç duyuyor (transitive değil,
+gerçek bir çalışma zamanı bağımlılığı). scipy geri kuruldu; `requirements.txt`'e
+bunun neden orada olduğunu (doğrudan import edilmese de) açıklayan bir yorum
+eklendi — gelecekte biri "kullanılmıyor" sanıp yanlışlıkla silmesin diye.
+
+### K-044: Vite şablonundan kalan kullanılmayan dosyalar silindi (kullanıcı onayıyla)
+`src/assets/react.svg`, `vite.svg`, `hero.png`, `public/icons.svg` ve
+`frontend/README.md` (Vite'ın kendi şablon içeriği) Aşama 1'den beri hiçbir
+bileşen tarafından kullanılmıyordu — Aşama 1'in `PROGRESS.md` kaydında "açık
+kalan küçük iş" olarak not edilmişti.
+**Karar:** Kullanıcıdan açıkça onay alınıp silindi (CLAUDE.md: dosya silme
+izin gerektirir). Build ve testler sonrasında tekrar çalıştırılıp hiçbir
+şeyin bozulmadığı doğrulandı.
+
+### K-045: Kayıt/inceleme ekranlarındaki `<audio>` elemanlarına `aria-label` eklendi
+Erişilebilirlik taramasında, birden fazla ses oynatıcının aynı sayfada
+bulunduğu (inceleme ekranı) durumlarda ekran okuyucu kullanıcılarının
+hangi oynatıcının hangi teste ait olduğunu ayırt edemeyeceği görüldü —
+tarayıcının varsayılan `<audio controls>` etiketi bunu belirtmiyor.
+**Karar:** Her `<audio>` elemanına `"{test adı} kaydını dinle"` şeklinde
+`aria-label` eklendi (`texts.voiceTest.playbackLabel`).
+
+### K-046: Klavye ile buton aktivasyonu (Enter/Space) bu ortamda kesin olarak doğrulanamadı
+Erişilebilirlik kontrolü sırasında Tab ile odaklanmanın ve `:focus-visible`
+halkasının doğru çalıştığı görsel olarak doğrulandı, ancak bu oturumun
+tarayıcı otomasyon aracında gönderilen sentetik `Enter`/`Space` tuş
+vuruşları (ve manuel `dispatchEvent` denemesi) butonun `onClick`'ini
+tetiklemedi — muhtemelen bu sanal ortamın "trusted event" kısıtlaması.
+**Durum:** Kodda hiçbir engelleyici yok (tüm interaktif elemanlar native
+`<button>`, `preventDefault` yoktur) — bu, HTML standardı gereği gerçek bir
+tarayıcıda çalışması beklenen bir davranıştır, ancak burada kesin olarak
+kanıtlanamadı. README'nin manuel test kontrol listesine eklendi; kullanıcının
+kendi tarayıcısında bir kez denemesi önerilir. Uydurma bir "doğrulandı"
+iddiası yapılmadı (CLAUDE.md: doğrulanamayan şey açıkça belirtilir).

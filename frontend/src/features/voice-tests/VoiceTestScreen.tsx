@@ -95,6 +95,7 @@ export function VoiceTestScreen({
               className="voice-test__player"
               controls
               src={existingRecording.url}
+              aria-label={texts.voiceTest.playbackLabel(config.title)}
               data-testid="playback-audio"
             />
             <div className="btn-row">

@@ -501,3 +501,98 @@ Tip kontrolü, lint ve üretim derlemesi temiz.
 ### Sonraki adım
 
 Aşama 7 (Kalite, test ve dokümantasyon) — kullanıcının "devam" onayı bekleniyor.
+
+---
+
+## Aşama 7 — Kalite, Test ve Dokümantasyon · 2026-08-05 · ✅ Tamamlandı
+
+Bu aşamada yeni bir özellik eklenmedi; mevcut altı aşama gözden geçirildi,
+temizlendi ve belgelendi.
+
+### Yapılanlar
+
+**Bağımlılık denetimi:**
+- `scipy`'nin gerçekten gerekli olup olmadığı test edildi (kaldırılıp
+  paket çalıştırıldı) — `librosa.pyin` çalışma zamanında ona ihtiyaç
+  duyuyor, geri kuruldu ve neden orada olduğu yorumla netleştirildi (K-043).
+- `httpx`'in neden `requirements.txt`'de olduğu netleştirildi (FastAPI
+  TestClient'ın arka planda kullandığı kütüphane).
+- Frontend bağımlılıkları (`package.json`) tarandı — kullanılmayan paket
+  bulunmadı.
+
+**Kod temizliği (kullanıcı onayıyla):**
+- Vite şablonundan kalan, hiçbir yerde kullanılmayan 5 dosya silindi:
+  `src/assets/react.svg`, `vite.svg`, `hero.png`, `public/icons.svg`,
+  `frontend/README.md` (K-044). Build ve testler sonrasında doğrulandı.
+
+**Erişilebilirlik:**
+- Başlık hiyerarşisi (`h1` → `h2` → `h3`) tüm ekranlarda tutarlı bulundu.
+- Kayıt/inceleme ekranlarındaki `<audio>` elemanlarına ayırt edici
+  `aria-label` eklendi — birden fazla oynatıcı aynı ekranda olduğunda hangi
+  testin kaydı olduğu artık ekran okuyucuya da bildiriliyor (K-045).
+- Tab ile odaklanma sırası ve `:focus-visible` halkası tarayıcıda görsel
+  olarak doğrulandı.
+- Klavye ile buton aktivasyonu (Enter/Space) bu ortamda kesin olarak
+  doğrulanamadı — ayrıntı ve gerekçe için K-046'ya bakın. Kodda engelleyici
+  yok, ama dürüstçe "doğrulanamadı" olarak işaretlendi.
+
+**Hata durumları:**
+- Backend'in beklenmeyen hatalarda (500) stack trace veya dosya yolu
+  sızdırmadığı doğrulandı — `UnsupportedAudioError`'ın ham mesajı hiçbir
+  zaman API cevabına yazılmıyor, FastAPI `debug=False` varsayılanında çalışıyor.
+- Daha önce hiç test edilmemiş bir senaryo bulundu ve kapatıldı: **analiz
+  isteği sırasında** (health check değil) sunucu hatası olursa ne oluyordu?
+  Yeni test (`Analiz sırasında hata durumu`) bunu kapsıyor: anlaşılır Türkçe
+  mesaj gösteriliyor, ham HTTP kodu sızmıyor, "İncelemeye dön" kayıtları
+  koruyarak geri götürüyor, "Tekrar dene" mekanizması çalışıyor.
+
+**Dokümantasyon:**
+- README.md: Teknoloji/Gereksinimler tabloları güncel duruma göre düzeltildi
+  (SoundFile kaldırıldı, FFmpeg'in artık gerekmediği netleştirildi).
+- README.md: **Bilinen sınırlamalar** bölümü eklendi (7 madde).
+- README.md: **Manuel test kontrol listesi** eklendi (17 madde) — otomatik
+  testlerin kapsamadığı, yalnızca gerçek tarayıcı/mikrofonla doğrulanabilecek
+  şeyler için.
+- Kurulum ve çalıştırma komutları README'de yazıldığı gibi tekrar
+  çalıştırılıp doğrulandı (backend + frontend gerçekten ayağa kalktı, health
+  check 200 döndü).
+
+### Testler — final durum
+
+| | Sonuç |
+| --- | --- |
+| Backend (pytest) | ✅ **46/46** |
+| Frontend (Vitest) | ✅ **33/33** (1 yeni: analiz sırasında sunucu hatası + kurtarma) |
+| Tip kontrolü, lint, üretim derlemesi | ✅ temiz |
+
+### Manuel doğrulama
+
+Kayıt akışının gerçek bir mikrofonla çalıştığı zaten Aşama 2'de kullanıcı
+tarafından doğrulanmıştı. Bu aşamada ayrıca:
+- Klavye ile Tab sırası ve odak halkası tarayıcıda görsel olarak kontrol edildi.
+- Kurulum komutları sıfırdan çalıştırılıp health check doğrulandı.
+
+### Doğrulanamayan / açık noktalar
+
+- Enter/Space ile buton aktivasyonu bu otomasyon ortamında test edilemedi
+  (K-046). Kod tarafında engelleyici yok; gerçek bir tarayıcıda çalışması
+  beklenir ama kanıtlanamadı — README'nin manuel kontrol listesine eklendi.
+- Renk kontrastı için otomatik bir araç (ör. axe) çalıştırılmadı; yalnızca
+  görsel/manuel değerlendirme yapıldı (koyu tema, yüksek kontrastlı metin
+  renkleri kullanıldı).
+
+### Genel proje durumu
+
+CLAUDE.md'nin planladığı 8 aşamadan 7'si tamamlandı. Uygulama uçtan uca
+çalışıyor: mikrofon izni → 3 test kaydı → gerçek pitch analizi → tahmini ses
+profili → demo şarkı önerileri. Backend 46, frontend 33 otomatik testle
+kaplı; tip kontrolü ve lint temiz. Kalan tek aşama olan **Aşama 8 (Yayına
+hazırlık)**, CLAUDE.md gereği yalnızca kullanıcının ayrıca açık onayıyla
+başlar — production ortam değişkenleri, deploy, HTTPS, rate limiting gibi
+konuları kapsıyor ve bu proje henüz o noktada değil (hâlâ tamamen yerel
+geliştirme aşamasında).
+
+### Sonraki adım
+
+Aşama 8 (Yayına hazırlık) — yalnızca kullanıcı ayrıca ve açıkça onay verirse
+başlanacak. Onay gelmezse proje mevcut hâliyle (Aşama 7 sonu) tamamlanmış sayılır.
