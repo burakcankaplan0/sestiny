@@ -164,12 +164,72 @@ def test_response_schema_has_expected_fields():
     response = client.post(f"{API_V1_PREFIX}/analyze-session", files=_valid_session_files())
     body = response.json()
 
-    assert set(body.keys()) == {"session_id", "status", "speech", "sustained_vowel", "glide"}
-    for test_id in ("speech", "sustained_vowel", "glide"):
-        assert set(body[test_id].keys()) == {
-            "accepted",
-            "overall_score",
-            "label",
-            "warnings",
-            "duration_seconds",
-        }
+    assert set(body.keys()) == {"session_id", "status", "quality", "speech", "sustained_vowel", "glide", "profile"}
+    assert set(body["quality"].keys()) == {"overall_score", "label", "warnings"}
+
+    common_fields = {"accepted", "warnings", "duration_seconds", "confidence"}
+    assert set(body["speech"].keys()) == common_fields | {
+        "median_f0_hz",
+        "approximate_note",
+        "pitch_variability_semitones",
+        "voiced_ratio",
+    }
+    assert set(body["sustained_vowel"].keys()) == common_fields | {
+        "median_f0_hz",
+        "approximate_note",
+        "voiced_duration_seconds",
+        "pitch_deviation_cents",
+        "jump_count",
+        "dropout_ratio",
+        "stability_score",
+        "stability_label",
+    }
+    assert set(body["glide"].keys()) == common_fields | {
+        "observed_low_note",
+        "observed_high_note",
+        "observed_low_midi",
+        "observed_high_midi",
+        "range_semitones",
+        "estimated_comfortable_low_note",
+        "estimated_comfortable_high_note",
+    }
+
+
+def test_valid_recordings_produce_pitch_analysis():
+    """Kabul edilen kayıtlar için gerçek pitch alanları doldurulmalı, uydurma değer değil."""
+    response = client.post(f"{API_V1_PREFIX}/analyze-session", files=_valid_session_files())
+    body = response.json()
+
+    assert body["speech"]["median_f0_hz"] is not None
+    assert body["speech"]["approximate_note"] is not None
+    assert body["sustained_vowel"]["stability_score"] > 0
+    assert body["glide"]["observed_low_note"] is not None
+    assert body["glide"]["observed_high_note"] is not None
+
+
+def test_valid_session_produces_profile_without_diagnostic_claims():
+    """Kabul edilen oturumda tahmini profil üretilir; kesin/tıbbi ifade kullanılmaz."""
+    response = client.post(f"{API_V1_PREFIX}/analyze-session", files=_valid_session_files())
+    body = response.json()
+
+    assert body["profile"] is not None
+    assert "merkezli ses profili" in body["profile"]["label"]
+    assert "gözlemlenen aralık" in body["profile"]["range_label"]
+    assert "teşhisi değildir" in body["profile"]["summary"]
+    for forbidden in ("kesin", "sağlıklı", "sağlıksız", "teşhis konuldu"):
+        assert forbidden not in body["profile"]["summary"].lower()
+
+
+def test_rejected_recording_does_not_get_fabricated_pitch_fields():
+    """Kalite açısından reddedilen bir kayıt için pitch analizi hiç denenmemeli."""
+    files = _valid_session_files()
+    files["speech"] = ("speech.wav", io.BytesIO(_sine_wav_bytes(150, 0.5)), "audio/wav")
+
+    response = client.post(f"{API_V1_PREFIX}/analyze-session", files=files)
+    body = response.json()
+
+    assert body["speech"]["accepted"] is False
+    assert body["speech"]["median_f0_hz"] is None
+    assert body["speech"]["approximate_note"] is None
+    assert body["status"] == "rejected"
+    assert body["profile"] is None

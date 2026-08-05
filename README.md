@@ -9,10 +9,10 @@ bu profile uygun şarkılar önermeyi hedefleyen, web tabanlı bir uygulamadır.
 
 ## Durum
 
-🚧 Geliştirme aşamasında — **Aşama 3 (Dosya yükleme ve kalite kontrolü) tamamlandı.**
-Uygulamada mikrofon kaydı çalışıyor, backend yüklenen ses dosyalarını kalite
-açısından değerlendirebiliyor; henüz gerçek pitch/nota analizi ve sonuç ekranı yok
-(bu ikisi Aşama 4/5'te gelecek — bkz. `docs/PROJECT_PLAN.md`).
+🚧 Geliştirme aşamasında — **Aşama 4 (Ses analizi) tamamlandı.**
+Uygulamada mikrofon kaydı çalışıyor, backend yüklenen ses dosyalarından gerçek
+nota tespiti, stabilite skoru ve tahmini ses profili üretebiliyor; henüz sonuç
+ekranı yok (bu Aşama 5'te gelecek — bkz. `docs/PROJECT_PLAN.md`).
 Geliştirme planı için `docs/PROJECT_PLAN.md` dosyasına bakın.
 
 ## Nasıl çalışır?

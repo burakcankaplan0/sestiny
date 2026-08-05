@@ -266,3 +266,77 @@ edildi — eşik mantığı gerçek bir ses dosyasıyla teyit edildi.
 ### Sonraki adım
 
 Aşama 4 (Ses analizi — pitch/nota tespiti) — kullanıcının "devam" onayı bekleniyor.
+
+---
+
+## Aşama 4 — Ses Analizi · 2026-08-05 · ✅ Tamamlandı
+
+Bu aşama da yalnızca backend'i kapsıyor — sonuç ekranı yok (Aşama 5), "Analiz
+et" butonu hâlâ backend'e istek atmıyor. Ama backend artık gerçek sayılar
+üretiyor: nota tespiti, stabilite skoru, gözlemlenen aralık, tahmini profil.
+
+### Yeni bağımlılıklar
+
+`librosa==0.11.0`, `scipy==1.18.0`. SoundFile **eklenmedi** — ses zaten Aşama
+3'te PyAV ile numpy dizisine çevrilmiş durumda, librosa.pyin bunu doğrudan
+kabul ediyor (bkz. K-028, CLAUDE.md'nin belirttiği yığından bilinçli sapma).
+
+### Eklenen dosyalar
+
+| Dosya | İçerik |
+| --- | --- |
+| `app/services/music_theory.py` | Hz ↔ MIDI ↔ nota adı dönüşümü (standart MIDI formülü, A4=440 Hz) |
+| `app/services/pitch_analysis.py` | `librosa.pyin` ile F0 çıkarımı, oktav hatası/düşük güven temizliği, üç test için ayrı analiz fonksiyonu, stabilite skoru |
+| `app/services/profile_builder.py` | Glide aralığının orta noktasından kaba "merkez bölge" + "aralık genişliği" tahmini, Türkçe özet metni |
+| `app/core/config.py` | pyin arama aralığı, sıçrama/güven eşikleri, stabilite skoru ağırlıkları, profil sınır değerleri — hepsi açıklamalı sabitler |
+
+`app/api/analysis.py` ve `app/schemas/analysis.py` genişletildi: her testin
+cevabına gerçek pitch alanları ve oturum geneline `quality` + `profile` eklendi.
+
+### Kapsanan gereksinimler (CLAUDE.md Aşama 4)
+
+- ✅ `librosa.pyin` ile F0 çıkarımı (arama aralığı ~C2-C7)
+- ✅ Konuşma analizi (medyan F0, yaklaşık nota, perde değişkenliği, voiced oranı)
+- ✅ Uzun "A" stabilite analizi (cents sapma, dropout, sıçrama sayısı, 0-100 skor)
+- ✅ Glide aralık analizi (gözlemlenen alt/üst nota, tahmini rahat bölge — %5/%95 yüzdelik dilim, uç değerler doğrudan kullanılmıyor)
+- ✅ Hz–MIDI–nota dönüşümü (standart formül, A4=440 Hz)
+- ✅ Aykırı değer temizliği (düşük güvenli frame'ler + oktav hatası sıçramaları elenir; konuşmadaki gerçek hece geçişleri yanlışlıkla silinmez, bkz. K-029)
+- ✅ Güven skoru (`confidence` — güvenilir frame oranı, açıkça "istatistiksel güven aralığı değildir" diye belirtiliyor)
+- ✅ Tahmini profil oluşturma (klasik ses türü sınıflandırması değil, bkz. K-033)
+- ✅ Otomatik sentetik ses testleri
+
+### Testler — hepsi geçiyor
+
+| Test dosyası | Sonuç |
+| --- | --- |
+| `test_health.py` | ✅ 5/5 |
+| `test_analysis.py` | ✅ 12/12 (8 mevcut + 4 yeni: pitch alanları doluyor, profil üretiliyor ve tıbbi ifade içermiyor, reddedilen kayıtta pitch/profil None) |
+| `test_pitch_analysis.py` | ✅ 8/8 (A3/C4 nota tespiti, stabil/dalgalanan stabilite karşılaştırması, sessizlikte uydurma yok, glide alt/üst nota, glide sessizlikte uydurma yok) |
+| `test_profile_builder.py` | ✅ 6/6 (glide yoksa profil yok, düşük/yüksek/dar/geniş etiketleri, özet metninde kesin/tıbbi ifade veya klasik ses türü adı yok) |
+| **Toplam** | **✅ 30/30** |
+
+CLAUDE.md madde 15'teki sentetik ses testleri (220 Hz→A3, 261.63 Hz→C4, stabil/
+dalgalanan sinüs, glide alt/üst nota) birebir karşılanıyor.
+
+### Gerçek dosyayla doğrulama
+
+Üç ayrı WebM/Opus dosyası (150 Hz konuşma, 196 Hz uzun ünlü, 98→330 Hz kaydırma
+— CLAUDE.md'nin kendi G2-E4 örneğiyle aynı aralık) PyAV ile kodlanıp canlı
+sunucuya `curl` ile gönderildi. Sonuç: `observed_low_note: "G2"`,
+`observed_high_note: "E4"`, `range_semitones: 21` — CLAUDE.md'nin örnek
+JSON'undaki değerlerle birebir eşleşti. Sabit tonlu kayıtta stabilite skoru
+100, tahmini profil metni beklenen Türkçe cümle yapısında ve tıbbi/kesin ifade
+içermiyor.
+
+### Kabul kriterleri
+
+| Kriter | Durum |
+| --- | --- |
+| A3 ve C4 sentetik testleri kabul edilebilir toleransta doğru bulunuyor | ✅ |
+| Sessiz veya anlamsız ses için nota uydurulmuyor | ✅ |
+| Üç test için response schema doluyor | ✅ |
+| Düşük güvenli sonuç açıkça işaretleniyor | ✅ (`confidence` alanı + kalite reddinde pitch alanları boş) |
+
+### Sonraki adım
+
+Aşama 5 (Sonuç ekranı) — kullanıcının "devam" onayı bekleniyor.

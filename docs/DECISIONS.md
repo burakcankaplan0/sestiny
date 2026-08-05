@@ -201,3 +201,66 @@ sonuçlarının yetersiz çıkması (normal kullanıcı senaryosu).
 (dosya hiç işlenmeden). Format/süre/ses seviyesi gibi kalite sorunları ise HTTP
 200 ile, `status: "rejected"` ve testin kendi `warnings` listesiyle
 bildiriliyor — böylece tek bir response şekli her durumda kullanılabiliyor.
+
+---
+
+## Aşama 4 — 2026-08-05
+
+### K-028: SoundFile eklenmedi; PyAV + librosa.pyin doğrudan numpy dizisi üzerinde çalışıyor
+CLAUDE.md'nin teknik yığınında SoundFile de sayılıyor, ancak SoundFile
+(libsndfile) tarayıcının ürettiği WebM/Opus, MP4/AAC gibi formatları çözemiyor
+— bu yüzden Aşama 3'te zaten PyAV'e geçildi (K-023). librosa'nın kendi
+`librosa.load()` fonksiyonu dosya okurken arka planda soundfile/audioread
+kullanır, ama biz dosyayı zaten Aşama 3'te PyAV ile numpy dizisine çevirmiş
+durumdayız — `librosa.pyin()` bu diziyi doğrudan kabul ediyor.
+**Karar:** SoundFile hiç eklenmedi; gereksiz/kullanılmayan bağımlılık
+olurdu. `requirements.txt`'de bu sapmanın nedeni not edildi.
+
+### K-029: Oktav hatası temizliği yalnızca "aynı sesli bölüm içindeki" sıçramalara uygulanıyor
+İlk tasarımda ardışık güvenilir frame'ler arasındaki her büyük sıçrama
+elenecekti; ama konuşma testinde iki ayrı hece arasında (arada sessiz boşluk
+varken) perdenin gerçekten büyük değişmesi normaldir — bunu "oktav hatası"
+sanıp silmek gerçek veriyi kaybettirir.
+**Karar:** Yalnızca zaman olarak birbirine yakın (aynı kesintisiz sesli bölüm
+içindeki, `hop_length`'in ~1.5 katından yakın) frame'ler arasındaki
+MAX_SEMITONE_JUMP (6 yarı ton) üstü sıçramalar elenir; aralarında boşluk olan
+frame'ler karşılaştırılmaz.
+
+### K-030: "confidence" alanı, güvenilir şekilde takip edilen frame oranı olarak tanımlandı
+CLAUDE.md her analiz sonucunda bir güven skoru istiyor ama tam formülünü
+vermiyor. İstatistiksel bir güven aralığı hesaplamak (ör. bootstrap) bu
+aşama için gereksiz karmaşıklık olurdu.
+**Karar:** `confidence = temiz/güvenilir frame sayısı / toplam frame sayısı`,
+0-1 arası. Kod içinde bunun istatistiksel bir güven aralığı olmadığı,
+yalnızca "kaydın ne kadarında perde takip edilebildiği" anlamına geldiği
+açıkça belirtiliyor.
+
+### K-031: Kalitesi reddedilen bir kayıt için pitch analizi hiç çalıştırılmıyor
+Süresi çok kısa, çok sessiz veya bozuk bir kayıt üzerinde pyin çalıştırıp
+anlamlıymış gibi bir nota/skor döndürmek, CLAUDE.md'nin "sabit/uydurma sonuç
+döndürülmez" kuralını ihlal eder.
+**Karar:** `_decode_and_evaluate_quality`, kalite reddedilirse `decoded=None`
+döner; `_build_*_analysis` fonksiyonları bu durumda tüm pitch alanlarını
+`None`/0 bırakır, pyin hiç çağrılmaz. Test: `test_rejected_recording_does_not_get_fabricated_pitch_fields`.
+
+### K-032: Oturum genelinde tek bir `quality` özeti eklendi (K-025'in tamamlanması)
+Aşama 3'te bilerek ertelenen (K-025) oturum geneli `quality` nesnesi artık
+gerçek verimiz olduğu için eklendi — CLAUDE.md'deki örnek JSON şemasıyla artık
+birebir uyumlu (recommendations hariç, o Aşama 6).
+**Karar:** `overall_score`, üç testin en düşük skoru (zincirin en zayıf halkası);
+`warnings`, hangi testten geldiği Türkçe önekle belirtilerek birleştiriliyor
+(örn. "Konuşma testi: Kayıt çok kısa görünüyor.") — aksi hâlde kullanıcı hangi
+kaydı yeniden yapması gerektiğini anlayamaz.
+
+### K-033: `profile` alanı K-025'in aksine Aşama 5'e değil, Aşama 4'e eklendi
+K-025, "profile"/"recommendations" alanlarının gerçek pitch verisi olmadan
+doldurulamayacağını, ikisinin de sonraki aşamalara bırakılacağını söylüyordu.
+Ancak CLAUDE.md'nin Aşama 4 madde listesi "Tahmini profil oluşturma"yı açıkça
+Aşama 4'ün kendi kapsamında sayıyor — ve artık gerçek glide/stabilite verisi
+elimizde olduğu için ertelemenin bir nedeni kalmadı.
+**Karar:** `services/profile_builder.py` eklendi; `recommendations` (şarkı
+verisi gerektirdiği için) Aşama 6'ya ertelenmeye devam ediyor. Profil,
+yalnızca oturum tamamen kabul edildiyse VE glide aralığı güvenilir şekilde
+belirlenebildiyse üretiliyor; aksi hâlde `null` — uydurma profil yok.
+Testler (`test_profile_builder.py`) özet metninde kesin/tıbbi ifade veya
+klasik ses türü adı (bariton/tenor/soprano) geçmediğini de doğruluyor.

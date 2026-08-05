@@ -62,6 +62,60 @@ MIN_RMS_WARN = 0.02
 # altına düşerse (veya sert bir ret koşulu tetiklenirse) kayıt reddedilir.
 QUALITY_SCORE_WARNING_PENALTY = 20
 QUALITY_ACCEPT_SCORE_THRESHOLD = 50
+QUALITY_LABEL_GOOD_MIN = 80
+
+# ---------- Pitch analizi (librosa.pyin) ----------
+# Arama aralığı yaklaşık C2-C7: insan konuşma/şarkı sesi için yeterince geniş,
+# anlamsız gürültüyü büyük ölçüde dışarıda bırakır (bkz. CLAUDE.md bölüm 11).
+PYIN_FMIN_HZ = 65.4  # ~C2
+PYIN_FMAX_HZ = 2093.0  # ~C7
+PYIN_FRAME_LENGTH = 2048
+PYIN_HOP_LENGTH = 512
+
+# pyin'in ürettiği voiced_prob bu değerin altındaysa frame güvenilmez sayılır.
+VOICED_PROB_THRESHOLD = 0.5
+
+# Art arda gelen (zamanda birbirine yakın) güvenilir frame'ler arasında bu kadar
+# yarı tondan büyük bir sıçrama, muhtemel bir oktav hatası veya izleme hatası
+# sayılır ve elenir. Aralarında sessiz bir boşluk olan frame'ler karşılaştırılmaz
+# (örn. konuşmadaki iki ayrı hece arası) — bu sadece gerçek süreklilik içindeki
+# fiziksel olarak anlamsız sıçramaları hedefler.
+MAX_SEMITONE_JUMP = 6.0
+
+# ---------- Stabilite skoru (bilimsel/klinik standart değildir, bkz. CLAUDE.md bölüm 13) ----------
+STABILITY_CENTS_DIVISOR = 4.0  # sapma arttıkça puan kırar: her ~4 cent ~1 puan
+STABILITY_MAX_DEVIATION_PENALTY = 50.0
+STABILITY_DROPOUT_WEIGHT = 40.0
+STABILITY_MAX_DROPOUT_PENALTY = 30.0
+STABILITY_JUMP_PENALTY = 3.0
+STABILITY_MAX_JUMP_PENALTY = 20.0
+STABILITY_LOW_VOICED_RATIO_THRESHOLD = 0.5
+STABILITY_LOW_VOICED_PENALTY = 15.0
+
+STABILITY_LABEL_STABLE_MIN = 80
+STABILITY_LABEL_MODERATE_MIN = 55
+
+# ---------- Tahmini rahat bölge (glide testi, bkz. CLAUDE.md bölüm 14) ----------
+# Uç değerler doğrudan kullanılmaz; güvenilir F0 dağılımının bu yüzdelik
+# dilimleri "gözlemlenen uç" kabul edilir, tahmini rahat bölge bundan daha dardır.
+COMFORTABLE_RANGE_LOW_PERCENTILE = 5
+COMFORTABLE_RANGE_HIGH_PERCENTILE = 95
+# Bu güven/frame sayısının altında rahat bölge tahmini yapılmaz — "güvenilir
+# şekilde belirlenemedi" durumuna düşülür.
+GLIDE_COMFORTABLE_RANGE_MIN_CONFIDENCE = 0.4
+GLIDE_COMFORTABLE_RANGE_MIN_FRAMES = 40
+
+# ---------- Tahmini profil (bilimsel/klinik sınıflandırma değildir, bkz. CLAUDE.md bölüm 4) ----------
+# Glide testinde gözlemlenen aralığın orta noktası (MIDI) bu sınırlara göre beş
+# kaba "merkez bölge" kategorisinden birine yerleştirilir. Klasik ses türü
+# sınıflandırması (bariton/tenor/...) DEĞİLDİR.
+PROFILE_CENTER_LOW_MAX_MIDI = 43  # ~G2 altı → düşük merkezli
+PROFILE_CENTER_LOW_MID_MAX_MIDI = 50  # ~D3 altı → orta-düşük merkezli
+PROFILE_CENTER_MID_MAX_MIDI = 57  # ~A3 altı → orta merkezli
+PROFILE_CENTER_MID_HIGH_MAX_MIDI = 64  # ~E4 altı → orta-yüksek merkezli; üstü → yüksek merkezli
+
+PROFILE_RANGE_NARROW_MAX_SEMITONES = 12  # 1 oktavdan dar
+PROFILE_RANGE_WIDE_MIN_SEMITONES = 19  # ~1.5 oktavdan geniş
 
 
 class Settings(BaseSettings):

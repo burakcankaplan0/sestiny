@@ -18,6 +18,7 @@ from app.core.config import (
     MIN_RMS_WARN,
     MIN_TEST_DURATION_SECONDS,
     QUALITY_ACCEPT_SCORE_THRESHOLD,
+    QUALITY_LABEL_GOOD_MIN,
     QUALITY_SCORE_WARNING_PENALTY,
     SILENCE_FRAME_MS,
     SILENCE_REJECT_RATIO,
@@ -82,6 +83,16 @@ def _compute_silence_ratio(samples: np.ndarray, sample_rate: int) -> float:
     return float(silent_frames / frame_count)
 
 
+def label_for_score(score: int) -> str:
+    """0-100 skoru "iyi/orta/yetersiz" etiketine çevirir. Dosya kalitesi ve oturum
+    genel kalitesi aynı eşikleri kullanır."""
+    if score >= QUALITY_LABEL_GOOD_MIN:
+        return "iyi"
+    if score >= QUALITY_ACCEPT_SCORE_THRESHOLD:
+        return "orta"
+    return "yetersiz"
+
+
 def evaluate_quality(test_id: TestId, metrics: QualityMetrics) -> FileQualityResult:
     """Ölçütleri eşiklerle karşılaştırıp kabul/ret kararı, skor, etiket ve uyarı listesi üretir."""
     warnings: list[str] = []
@@ -116,17 +127,10 @@ def evaluate_quality(test_id: TestId, metrics: QualityMetrics) -> FileQualityRes
     if not accepted and "Daha güvenilir sonuç için bu testi yeniden kaydet." not in warnings:
         warnings.append("Daha güvenilir sonuç için bu testi yeniden kaydet.")
 
-    if score >= 80:
-        label = "iyi"
-    elif score >= 50:
-        label = "orta"
-    else:
-        label = "yetersiz"
-
     return FileQualityResult(
         accepted=accepted,
         overall_score=score,
-        label=label,
+        label=label_for_score(score),
         warnings=warnings,
         duration_seconds=metrics.duration_seconds,
     )

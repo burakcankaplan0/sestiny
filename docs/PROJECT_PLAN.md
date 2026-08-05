@@ -141,8 +141,8 @@ Her aşama sonunda **durulur ve kullanıcının "devam" onayı beklenir**.
 | 1 | Vite+React ve FastAPI iskeleti, `/api/v1/health`, CORS, bağlantı doğrulama | ✅ Tamamlandı |
 | 2 | Mikrofon izni, üç test ekranı, kayıt/dinleme/silme akışı | ✅ Tamamlandı |
 | 3 | `POST /api/v1/analyze-session`, dosya doğrulama, geçici dosya yönetimi, kalite kontrolü | ✅ Tamamlandı |
-| 4 | librosa pitch analizi, profil oluşturma, sentetik ses testleri | ⬜ |
-| 5 | Sonuç ekranı (Türkçe kartlar, uyarı metni, düşük güven durumları) | ⬜ |
+| 4 | librosa pitch analizi, profil oluşturma, sentetik ses testleri | ✅ Tamamlandı |
+| 5 | Sonuç ekranı (Türkçe kartlar, uyarı metni, düşük güven durumları) | ⏳ Sırada |
 | 6 | Demo şarkı verisi, eşleştirme algoritması, öneri kartları | ⬜ |
 | 7 | Testler, erişilebilirlik, mobil kontrol, kod temizliği, dokümantasyon | ⬜ |
 | 8 | Yayına hazırlık — **yalnızca ayrıca açık onay verilirse** | ⬜ |

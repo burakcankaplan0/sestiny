@@ -1,7 +1,8 @@
 # Sestiny backend bağımlılıkları
 #
-# Not: librosa/scipy/soundfile henüz yok — pitch analizi Aşama 4'te eklenecek.
-# av + numpy Aşama 3'te ses format dönüştürme ve kalite kontrolü için eklendi.
+# Not: SoundFile kullanılmıyor — ses dönüştürme PyAV ile yapılıyor, tarayıcı
+# formatlarını (WebM/Opus, MP4) SoundFile/libsndfile doğrudan çözemiyor
+# (bkz. docs/DECISIONS.md K-007/K-023).
 
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
@@ -12,6 +13,10 @@ python-multipart==0.0.20
 # Ses format dönüştürme ve kalite kontrolü (Aşama 3)
 av==18.0.0
 numpy==2.5.1
+
+# Pitch/perde analizi (Aşama 4)
+librosa==0.11.0
+scipy==1.18.0
 
 # Test
 pytest==8.3.4
