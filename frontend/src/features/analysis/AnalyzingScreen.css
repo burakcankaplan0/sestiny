@@ -1,0 +1,32 @@
+.analyzing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-7) var(--space-4);
+  text-align: center;
+}
+
+.analyzing__spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  animation: analyzing-spin 0.9s linear infinite;
+}
+
+@keyframes analyzing-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.analyzing__message {
+  font-size: 1.0625rem;
+  color: var(--color-text-muted);
+}
+
+.analyzing__error {
+  color: var(--color-error-text);
+}

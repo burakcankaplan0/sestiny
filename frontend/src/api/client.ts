@@ -26,6 +26,18 @@ export class ApiError extends Error {
   }
 }
 
+async function handleJsonResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    throw new ApiError(texts.errors.server, `HTTP ${response.status}`);
+  }
+
+  try {
+    return (await response.json()) as T;
+  } catch (cause) {
+    throw new ApiError(texts.errors.unexpected, String(cause));
+  }
+}
+
 export async function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> {
   let response: Response;
 
@@ -36,13 +48,19 @@ export async function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> 
     throw new ApiError(texts.errors.network, String(cause));
   }
 
-  if (!response.ok) {
-    throw new ApiError(texts.errors.server, `HTTP ${response.status}`);
-  }
+  return handleJsonResponse<T>(response);
+}
+
+/** multipart/form-data POST isteği. Content-Type başlığı bilerek ayarlanmaz —
+ * tarayıcı, FormData sınırını (boundary) kendisi doğru şekilde ekler. */
+export async function apiPostForm<T>(path: string, form: FormData, signal?: AbortSignal): Promise<T> {
+  let response: Response;
 
   try {
-    return (await response.json()) as T;
+    response = await fetch(`${API_V1_URL}${path}`, { method: "POST", body: form, signal });
   } catch (cause) {
-    throw new ApiError(texts.errors.unexpected, String(cause));
+    throw new ApiError(texts.errors.network, String(cause));
   }
+
+  return handleJsonResponse<T>(response);
 }

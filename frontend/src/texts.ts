@@ -79,6 +79,39 @@ export const texts = {
     reRecordButton: "Yeniden kaydet",
     analyzeButton: "Analiz et",
     analyzeDisabledHint: "Analiz edebilmek için önce üç testi de tamamlamalısın.",
-    analyzeComingSoon: "Analiz özelliği bir sonraki geliştirme aşamasında eklenecek.",
+  },
+
+  analyzing: {
+    title: "Analiz ediliyor",
+    stage1: "Kayıt kalitesi kontrol ediliyor…",
+    stage2: "Ses perdesi analiz ediliyor…",
+    stage3: "Tahmini profil hazırlanıyor…",
+  },
+
+  results: {
+    title: "Tahmini Ses Profilin",
+    profileUnavailable: "Bu kayıtla güvenilir bir profil belirlenemedi.",
+    unavailable: "Güvenilir şekilde belirlenemedi.",
+
+    observedRangeTitle: "Gözlemlenen nota aralığı",
+    comfortableRangeTitle: "Tahmini rahat bölge",
+    speechPitchTitle: "Konuşma perdesi",
+    stabilityTitle: "Uzun ses stabilitesi",
+    voicedDurationTitle: "Sesli süre",
+    qualityTitle: "Kayıt kalitesi",
+    confidenceTitle: "Analiz güven skoru",
+
+    semitoneRange: (semitones: number) => `${semitones} yarı ton`,
+    pitchVariability: (semitones: number) => `±${semitones} yarı ton oynaklık`,
+    stabilityValue: (label: string, score: number) => `${label} (${score}/100)`,
+    secondsValue: (seconds: number) => `${seconds} sn`,
+    lowConfidenceNote: "Bu sonucun güveni düşük; temkinli yorumla.",
+
+    rejectedTitle: "Bazı kayıtlar yeniden gözden geçirilmeli",
+    rejectedIntro:
+      "Bu kayıtlarla güvenilir bir analiz yapılamadı. Aşağıdaki testleri yeniden yapman gerekiyor.",
+    backToReview: "İncelemeye dön",
+
+    redoAll: "Testi yeniden yap",
   },
 } as const;

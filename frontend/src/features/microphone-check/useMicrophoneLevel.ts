@@ -8,7 +8,8 @@ const LEVEL_VISUAL_GAIN = 4;
 /**
  * Aktif mikrofon akışının ses seviyesini kabaca 0-1 arasında döndürür.
  * Yalnızca "mikrofon çalışıyor" görsel geri bildirimi içindir; kayıt veya analiz için kullanılmaz.
- * AudioContext desteklenmiyorsa sessizce 0 döner (özellik zarifçe devre dışı kalır).
+ * AudioContext desteklenmiyorsa veya kurulumu herhangi bir nedenle başarısız olursa
+ * sessizce 0 döner — bu küçük görsel özellik asla tüm uygulamayı çökertmemeli.
  */
 export function useMicrophoneLevel(stream: MediaStream | null): number {
   const [level, setLevel] = useState(0);
@@ -19,11 +20,20 @@ export function useMicrophoneLevel(stream: MediaStream | null): number {
       return;
     }
 
-    const audioContext = new AudioContext();
-    const source = audioContext.createMediaStreamSource(stream);
-    const analyser = audioContext.createAnalyser();
-    analyser.fftSize = ANALYSER_FFT_SIZE;
-    source.connect(analyser);
+    let audioContext: AudioContext | undefined;
+    let source: MediaStreamAudioSourceNode;
+    let analyser: AnalyserNode;
+    try {
+      audioContext = new AudioContext();
+      source = audioContext.createMediaStreamSource(stream);
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = ANALYSER_FFT_SIZE;
+      source.connect(analyser);
+    } catch {
+      void audioContext?.close();
+      setLevel(0);
+      return;
+    }
 
     const buffer = new Uint8Array(analyser.frequencyBinCount);
     let frameId: number;

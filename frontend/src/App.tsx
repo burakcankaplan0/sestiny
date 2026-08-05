@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { submitAnalysisSession } from "./api/analysis";
+import { ApiError } from "./api/client";
+import { AnalyzingScreen } from "./features/analysis/AnalyzingScreen";
+import { ResultsScreen } from "./features/analysis/ResultsScreen";
 import { MicrophoneCheck } from "./features/microphone-check/MicrophoneCheck";
 import { useMicrophoneStream } from "./features/microphone-check/useMicrophoneStream";
 import { WelcomeScreen } from "./features/onboarding/WelcomeScreen";
@@ -8,9 +12,11 @@ import { VOICE_TESTS } from "./features/voice-tests/testConfig";
 import { VoiceTestScreen } from "./features/voice-tests/VoiceTestScreen";
 import { useBackendHealth } from "./hooks/useBackendHealth";
 import { texts } from "./texts";
+import type { AnalyzeSessionResponse } from "./types/analysis";
 import type { RecordingResult, RecordingsState, TestId } from "./types/recording";
+import { ScreenLayout } from "./components/ScreenLayout";
 
-type Step = "welcome" | "mic-check" | TestId | "review";
+type Step = "welcome" | "mic-check" | TestId | "review" | "analyzing" | "results";
 
 const TEST_ORDER: TestId[] = VOICE_TESTS.map((test) => test.id);
 
@@ -25,7 +31,9 @@ function App() {
   const [recordings, setRecordings] = useState<RecordingsState>(EMPTY_RECORDINGS);
   // Kullanıcı incelemeden bir testi yeniden kaydetmeye gittiğinde, bitince incelemeye geri dönmesi için.
   const [returnToReview, setReturnToReview] = useState(false);
-  const [analyzeMessage, setAnalyzeMessage] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalyzeSessionResponse | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisAttempt, setAnalysisAttempt] = useState(0);
 
   const health = useBackendHealth();
   const microphone = useMicrophoneStream();
@@ -44,6 +52,33 @@ function App() {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasAnyRecording]);
+
+  // "analyzing" adımına girildiğinde (veya tekrar denendiğinde) üç kaydı backend'e gönderir.
+  useEffect(() => {
+    if (step !== "analyzing") return undefined;
+
+    const { speech, sustained_vowel: sustainedVowel, glide } = recordings;
+    if (!speech || !sustainedVowel || !glide) {
+      // Buton yalnızca üçü tamamsa aktif oluyor; buraya düşülmesi beklenmez, savunma amaçlı.
+      setStep("review");
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setAnalysisError(null);
+
+    submitAnalysisSession({ speech, sustained_vowel: sustainedVowel, glide }, controller.signal)
+      .then((result) => {
+        setAnalysisResult(result);
+        setStep("results");
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setAnalysisError(error instanceof ApiError ? error.message : texts.errors.unexpected);
+      });
+
+    return () => controller.abort();
+  }, [step, analysisAttempt, recordings]);
 
   const handleRecordingChange = useCallback((testId: TestId, recording: RecordingResult | null) => {
     setRecordings((previous) => ({ ...previous, [testId]: recording }));
@@ -65,12 +100,34 @@ function App() {
 
   const handleReRecordFromReview = useCallback((testId: TestId) => {
     setReturnToReview(true);
-    setAnalyzeMessage(null);
     setStep(testId);
   }, []);
 
   const handleAnalyze = useCallback(() => {
-    setAnalyzeMessage(texts.review.analyzeComingSoon);
+    setStep("analyzing");
+  }, []);
+
+  const handleRetryAnalysis = useCallback(() => {
+    setAnalysisError(null);
+    setAnalysisAttempt((previous) => previous + 1);
+  }, []);
+
+  const handleBackToReviewFromAnalysis = useCallback(() => {
+    setAnalysisError(null);
+    setStep("review");
+  }, []);
+
+  const handleRestart = useCallback(() => {
+    setRecordings((previous) => {
+      Object.values(previous).forEach((recording) => {
+        if (recording) URL.revokeObjectURL(recording.url);
+      });
+      return EMPTY_RECORDINGS;
+    });
+    setAnalysisResult(null);
+    setAnalysisError(null);
+    setReturnToReview(false);
+    setStep("mic-check");
   }, []);
 
   if (step === "welcome") {
@@ -98,13 +155,45 @@ function App() {
   }
 
   if (step === "review") {
+    return <RecordingsReview recordings={recordings} onReRecord={handleReRecordFromReview} onAnalyze={handleAnalyze} />;
+  }
+
+  if (step === "analyzing") {
+    if (analysisError) {
+      return (
+        <ScreenLayout title={texts.analyzing.title}>
+          <p className="analyzing__error" role="alert">
+            {analysisError}
+          </p>
+          <div className="btn-row">
+            <button type="button" className="btn btn--primary" onClick={handleRetryAnalysis}>
+              {texts.connection.retry}
+            </button>
+            <button type="button" className="btn btn--secondary" onClick={handleBackToReviewFromAnalysis}>
+              {texts.results.backToReview}
+            </button>
+          </div>
+        </ScreenLayout>
+      );
+    }
+    return <AnalyzingScreen />;
+  }
+
+  if (step === "results") {
+    if (!analysisResult) {
+      // Teorik olarak buraya düşülmemeli — "results" adımına yalnızca analiz
+      // başarıyla tamamlanınca geçiliyor. Savunma amaçlı geri dönüş ekranı.
+      return (
+        <ScreenLayout title={texts.results.title}>
+          <p role="alert">{texts.errors.unexpected}</p>
+          <button type="button" className="btn btn--primary" onClick={() => setStep("review")}>
+            {texts.results.backToReview}
+          </button>
+        </ScreenLayout>
+      );
+    }
     return (
-      <RecordingsReview
-        recordings={recordings}
-        onReRecord={handleReRecordFromReview}
-        onAnalyze={handleAnalyze}
-        analyzeMessage={analyzeMessage}
-      />
+      <ResultsScreen result={analysisResult} onRestart={handleRestart} onBackToReview={() => setStep("review")} />
     );
   }
 

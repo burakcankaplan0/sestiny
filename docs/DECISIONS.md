@@ -264,3 +264,41 @@ yalnızca oturum tamamen kabul edildiyse VE glide aralığı güvenilir şekilde
 belirlenebildiyse üretiliyor; aksi hâlde `null` — uydurma profil yok.
 Testler (`test_profile_builder.py`) özet metninde kesin/tıbbi ifade veya
 klasik ses türü adı (bariton/tenor/soprano) geçmediğini de doğruluyor.
+
+---
+
+## Aşama 5 — 2026-08-05
+
+### K-034: "Analiz ediliyor" mesajları gerçek sunucu aşamalarını değil, yaklaşık bir sırayı temsil ediyor
+CLAUDE.md sahte yüzde göstergesi yerine gerçek işlem aşamalarına karşılık gelen
+mesajlar istiyor ("Kayıt kalitesi kontrol ediliyor" vb.). Ancak backend tek bir
+atomik HTTP isteğinde çalışıyor; frontend'in sunucunun hangi aşamada olduğuna
+dair gerçek bir sinyali yok.
+**Karar:** Üç mesaj, isteğin süresine göre zamanlı olarak sırayla gösteriliyor
+(son mesajda kalıp isteği beklemeye devam ediyor). Bu, kesin bir sunucu
+ilerlemesi iddia etmiyor — sahte yüzde göstergesi de kullanılmıyor, CLAUDE.md'nin
+asıl amacı (kullanıcıyı gerçek dışı bir kesinlikle yanıltmamak) korunuyor.
+
+### K-035: Sonuç ekranında "genel güven skoru", üç testin en düşüğü olarak hesaplanıyor
+Ortalama almak, tek bir düşük güvenli testi (örn. gürültülü bir glide kaydı)
+diğer ikisinin arkasına gizleyebilirdi.
+**Karar:** Backend'in kalite skorunu birleştirirken kullandığı aynı mantık
+(K-032, zincirin en zayıf halkası) burada da uygulanıyor — `Math.min`.
+
+### K-036: Reddedilen oturumda hiçbir veri kartı gösterilmiyor
+Kalitesi reddedilen bir testin pitch alanları zaten backend'de `null`
+dönüyor (K-031), ama yine de "boş kartlarla dolu bir sonuç ekranı" göstermek
+kafa karıştırıcı olurdu.
+**Karar:** `status: "rejected"` ise ResultsScreen tamamen farklı, sade bir görünüme
+geçiyor: yalnızca hangi testlerin neden reddedildiği (backend'in `quality.warnings`
+listesi, hangi testten geldiği önekli) ve "İncelemeye dön" butonu gösteriliyor.
+
+### K-037: Mikrofon seviye göstergesi hatası tüm uygulamayı çökertiyordu — düzeltildi
+Tarayıcıda gerçek bir akışla (sahte bir `MediaStream` nesnesiyle) elle test
+ederken `useMicrophoneLevel`'ın `AudioContext.createMediaStreamSource`
+çağrısının senkron olarak fırlattığı bir hatanın React effect'i içinde
+yakalanmadığı, bunun da tüm uygulamayı boş bir sayfaya düşürdüğü görüldü.
+**Karar:** Kurulum artık `try/catch` içinde; herhangi bir nedenle başarısız
+olursa (gerçek tarayıcılarda nadiren de olsa mümkün — cihaz kaybı, izin geri
+alınması vb.) özellik sessizce devre dışı kalır (seviye 0 döner), sayfa
+çökmez. Regresyon testi eklendi (`useMicrophoneLevel.test.ts`).

@@ -8,10 +8,9 @@ interface RecordingsReviewProps {
   recordings: RecordingsState;
   onReRecord: (testId: TestId) => void;
   onAnalyze: () => void;
-  analyzeMessage: string | null;
 }
 
-export function RecordingsReview({ recordings, onReRecord, onAnalyze, analyzeMessage }: RecordingsReviewProps) {
+export function RecordingsReview({ recordings, onReRecord, onAnalyze }: RecordingsReviewProps) {
   const allComplete = VOICE_TESTS.every((test) => recordings[test.id] !== null);
 
   return (
@@ -52,11 +51,6 @@ export function RecordingsReview({ recordings, onReRecord, onAnalyze, analyzeMes
           {texts.review.analyzeButton}
         </button>
         {!allComplete && <p className="review__hint">{texts.review.analyzeDisabledHint}</p>}
-        {analyzeMessage && (
-          <p className="review__hint" role="status" aria-live="polite">
-            {analyzeMessage}
-          </p>
-        )}
       </div>
     </ScreenLayout>
   );

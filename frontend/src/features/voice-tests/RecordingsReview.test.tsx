@@ -23,7 +23,6 @@ describe("RecordingsReview", () => {
         recordings={{ ...EMPTY, speech: makeRecording() }}
         onReRecord={vi.fn()}
         onAnalyze={vi.fn()}
-        analyzeMessage={null}
       />,
     );
 
@@ -37,7 +36,6 @@ describe("RecordingsReview", () => {
         recordings={{ speech: makeRecording(), sustained_vowel: makeRecording(), glide: makeRecording() }}
         onReRecord={vi.fn()}
         onAnalyze={vi.fn()}
-        analyzeMessage={null}
       />,
     );
 

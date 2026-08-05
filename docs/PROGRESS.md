@@ -340,3 +340,83 @@ içermiyor.
 ### Sonraki adım
 
 Aşama 5 (Sonuç ekranı) — kullanıcının "devam" onayı bekleniyor.
+
+---
+
+## Aşama 5 — Sonuç Ekranı · 2026-08-05 · ✅ Tamamlandı
+
+"Analiz et" butonu ilk kez gerçekten backend'e istek atıyor. Karşılama →
+Mikrofon → 3 test → İnceleme → **Analiz ediliyor → Sonuç ekranı** akışı artık uçtan uca tam.
+
+### Eklenen dosyalar
+
+| Dosya | İçerik |
+| --- | --- |
+| `types/analysis.ts` | Backend'in `AnalyzeSessionResponse` şemasıyla birebir eşleşen TypeScript tipleri |
+| `api/analysis.ts` | Üç kaydı tek multipart istekte `/analyze-session`'a gönderir |
+| `api/client.ts` | `apiPostForm` eklendi (JSON POST değil, FormData — Content-Type tarayıcıya bırakılıyor) |
+| `features/analysis/AnalyzingScreen.tsx` | Sahte yüzde göstergesi yerine gerçek aşama mesajları (bkz. K-034) |
+| `features/analysis/ResultsScreen.tsx` | Backend JSON'unu Türkçe kartlara çeviren asıl sonuç ekranı |
+
+`App.tsx` genişletildi: `analyzing`/`results` adımları, hata/tekrar dene akışı,
+"Testi yeniden yap" ile tam sıfırlama. `RecordingsReview`'daki eski "yakında
+eklenecek" yer tutucusu kaldırıldı (artık gerçek işlevsellik var).
+
+### Kapsanan gereksinimler (CLAUDE.md Aşama 5)
+
+- ✅ Tahmini ses profili, gözlemlenen nota aralığı, tahmini rahat bölge
+- ✅ Konuşma perdesi, stabilite, sesli süre, kayıt kalitesi, güven skoru
+- ✅ Açıklama metni (backend'in ürettiği profil özeti)
+- ✅ Profesyonel teşhis olmadığı uyarısı (her sonuç ekranında)
+- ✅ Testi yeniden yapma
+- ✅ Teknik JSON kullanıcı dostu Türkçe kartlara çevriliyor
+- ✅ Düşük güven durumları doğru anlatılıyor ("Bu sonucun güveni düşük; temkinli yorumla.")
+- ✅ Kesin veya tıbbi iddia kullanılmıyor (testle doğrulanıyor)
+- ✅ Mobil ekranlarda düzgün görünüyor (tarayıcıda elle doğrulandı)
+
+### Bulunan ve düzeltilen gerçek hata
+
+Tarayıcıda uçtan uca denerken (bkz. aşağıdaki "Tarayıcıda doğrulama" bölümü),
+mikrofon seviye göstergesinin (`useMicrophoneLevel`) `AudioContext` kurulumu
+başarısız olduğunda **tüm uygulamayı** boş bir sayfaya düşürdüğü ortaya çıktı —
+küçük bir görsel özelliğin tüm akışı çökertmesi kabul edilemezdi. `try/catch`
+ile düzeltildi, regresyon testi eklendi. Detay: K-037.
+
+### Testler — hepsi geçiyor
+
+| Test dosyası | Sonuç |
+| --- | --- |
+| Mevcut testler (Aşama 1-4) | ✅ 14/14 |
+| `AnalyzingScreen.test.tsx` | ✅ 1/1 |
+| `ResultsScreen.test.tsx` | ✅ 8/8 (veri→kart eşlemesi, profil/aralık yoksa uydurmuyor, düşük güven notu, kesin/tıbbi ifade yok, reddedilen oturum, yeniden başlatma) |
+| `useMicrophoneLevel.test.ts` | ✅ 2/2 (K-037 regresyon testi dahil) |
+| App uçtan uca analiz testi | ✅ 1/1 (üç test kaydedilip "Analiz et"e basılınca backend verisi doğru kartlara yerleşiyor, ham alan adları sızmıyor) |
+| **Toplam** | **✅ 26/26** |
+
+Tip kontrolü, lint ve üretim derlemesi temiz.
+
+### Tarayıcıda doğrulama
+
+Gerçek tarayıcıda (bu ortamda gerçek mikrofon donanımı olmadığından
+`fetch`/`getUserMedia`/`MediaRecorder` yalnızca doğrulama amacıyla geçici
+olarak taklit edilerek — kaynak kod değiştirilmeden) uçtan uca denendi:
+
+- ✅ Üç test gerçekten kaydedilip (gerçek zaman geçirilerek) inceleme ekranına ulaşıldı
+- ✅ "Analiz et" → "Analiz ediliyor" → Sonuç ekranı geçişi çalıştı
+- ✅ Sonuç ekranı masaüstünde: profil özeti, 2 sütunlu kart grid'i, düşük güven notları doğru kartlarda (Gözlemlenen Nota Aralığı, Analiz Güven Skoru) — bilerek düşük confidence (0.35) gönderildi
+- ✅ Mobilde (375px): tek sütun, hiçbir taşma/kesme yok
+- ✅ Konsolda hata yok (K-037 düzeltmesinden sonra)
+- ⏸️ Reddedilen oturum senaryosu tarayıcıda elle denenmedi (görsel karmaşıklığı düşük — tek uyarı listesi + buton); `ResultsScreen.test.tsx`'te otomatik testle doğrulandı
+
+### Kabul kriterleri
+
+| Kriter | Durum |
+| --- | --- |
+| Teknik JSON kullanıcı dostu Türkçe kartlara çevriliyor | ✅ |
+| Düşük güven durumları doğru anlatılıyor | ✅ |
+| Kesin veya tıbbi iddia kullanılmıyor | ✅ |
+| Mobil ekranlarda düzgün görünüyor | ✅ |
+
+### Sonraki adım
+
+Aşama 6 (Şarkı önerileri) — kullanıcının "devam" onayı bekleniyor.

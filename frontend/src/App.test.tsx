@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import App from "./App";
+import { VOICE_TESTS } from "./features/voice-tests/testConfig";
 import { texts } from "./texts";
 
 function mockFetchOnceOk() {
@@ -13,6 +14,77 @@ function mockFetchOnceOk() {
     }),
   );
 }
+
+/** Health kontrolüne ve analyze-session'a URL'e göre farklı sahte cevap döndürür. */
+function mockFetchWithAnalysisResult(analysisResponse: unknown) {
+  return vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+
+    if (url.includes("/analyze-session")) {
+      return new Response(JSON.stringify(analysisResponse), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ status: "ok", message: "Backend bağlantısı başarılı" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  });
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const ACCEPTED_ANALYSIS_RESPONSE = {
+  session_id: "test-session-id",
+  status: "accepted",
+  quality: { overall_score: 92, label: "iyi", warnings: [] },
+  speech: {
+    accepted: true,
+    warnings: [],
+    duration_seconds: 4.0,
+    median_f0_hz: 150.2,
+    approximate_note: "D3",
+    pitch_variability_semitones: 1.1,
+    voiced_ratio: 0.95,
+    confidence: 0.9,
+  },
+  sustained_vowel: {
+    accepted: true,
+    warnings: [],
+    duration_seconds: 3.0,
+    median_f0_hz: 196.0,
+    approximate_note: "G3",
+    voiced_duration_seconds: 2.9,
+    pitch_deviation_cents: 12.0,
+    jump_count: 0,
+    dropout_ratio: 0.01,
+    stability_score: 88,
+    stability_label: "stabil",
+    confidence: 0.92,
+  },
+  glide: {
+    accepted: true,
+    warnings: [],
+    duration_seconds: 4.0,
+    observed_low_note: "G2",
+    observed_high_note: "E4",
+    observed_low_midi: 43,
+    observed_high_midi: 64,
+    range_semitones: 21,
+    estimated_comfortable_low_note: "A2",
+    estimated_comfortable_high_note: "D4",
+    confidence: 0.85,
+  },
+  profile: {
+    label: "orta-düşük merkezli ses profili",
+    range_label: "geniş gözlemlenen aralık",
+    summary:
+      "Kaydında orta-düşük bölgede yoğunlaşan bir ses profili gözlemlendi. Uzun ses testinde perde kararlılığın yüksekti. Kaydırma testinde yaklaşık G2–E4 aralığı gözlemlendi. Bu değerler profesyonel bir ses türü teşhisi değildir ve mikrofon, ortam, teknik ve o anki ses durumundan etkilenebilir.",
+  },
+};
 
 /** Testlerde gerçek MediaRecorder yerine kullanılan basit sahte kayıt cihazı. */
 class FakeMediaRecorder {
@@ -171,4 +243,56 @@ describe("Ses kaydı akışı", () => {
     expect(screen.getByTestId("playback-audio")).toBeInTheDocument();
     expect(screen.getByText(texts.voiceTest.recordingSaved)).toBeVisible();
   });
+});
+
+describe("Uçtan uca analiz akışı", () => {
+  it(
+    "üç test kaydedilip 'Analiz et'e basılınca sonuç ekranı backend verisini doğru kartlara yerleştirir",
+    async () => {
+      const user = userEvent.setup();
+      stubMicrophoneSupport();
+      mockFetchWithAnalysisResult(ACCEPTED_ANALYSIS_RESPONSE);
+
+      render(<App />);
+
+      await user.click(await screen.findByRole("button", { name: texts.app.startButton }));
+      await user.click(await screen.findByRole("button", { name: texts.microphone.grantButton }));
+      await user.click(await screen.findByRole("button", { name: texts.microphone.continueButton }));
+
+      // Üç testi de sırayla kaydet; her kaydı, o testin minimum süresini karşılayacak kadar bekletiyoruz
+      // (gerçek zaman kullanıyoruz — sahte zamanlayıcı, user-event + çoklu findBy adımlarını kırılgan yapardı).
+      for (const test of VOICE_TESTS) {
+        await user.click(screen.getByRole("button", { name: texts.voiceTest.startButton }));
+        await sleep((test.minSeconds + 0.5) * 1000);
+        await user.click(screen.getByRole("button", { name: texts.voiceTest.stopButton }));
+
+        const continueButton = await screen.findByRole("button", {
+          name: (name) => name === texts.voiceTest.nextTest || name === texts.voiceTest.goToReview,
+        });
+        expect(continueButton).toBeEnabled();
+        await user.click(continueButton);
+      }
+
+      // İnceleme ekranı.
+      const analyzeButton = await screen.findByRole("button", { name: texts.review.analyzeButton });
+      expect(analyzeButton).toBeEnabled();
+      await user.click(analyzeButton);
+
+      // Sonuç ekranı — backend verisi Türkçe kartlara doğru yerleşmiş olmalı.
+      // (Analiz ediliyor ekranı sahte cevap neredeyse anında döndüğü için burada
+      // güvenilir şekilde yakalanamıyor; AnalyzingScreen ayrı bir testte doğrulanıyor.)
+      expect(await screen.findByRole("heading", { level: 1, name: texts.results.title })).toBeVisible();
+      expect(screen.getByText("orta-düşük merkezli ses profili")).toBeVisible();
+      expect(screen.getByText("G2 – E4")).toBeVisible();
+      expect(screen.getByText(texts.results.semitoneRange(21))).toBeVisible();
+      expect(screen.getByText("A2 – D4")).toBeVisible();
+      expect(screen.getByText(/D3.*150\.2 Hz/)).toBeVisible();
+      expect(screen.getByText(texts.results.stabilityValue("stabil", 88))).toBeVisible();
+      expect(screen.getByText(texts.disclaimer.notDiagnosis)).toBeVisible();
+
+      // Ham backend alan adları veya teknik jargon sızmamalı.
+      expect(screen.queryByText(/median_f0_hz|observed_low_midi|session_id/)).not.toBeInTheDocument();
+    },
+    20000,
+  );
 });
