@@ -190,12 +190,12 @@ sahte `MediaRecorder` ile otomatik testte doğrulandı.
 | Kayıtları ayrı ayrı yeniden yapabiliyor | ✅ |
 | İzin reddi doğru yönetiliyor | ✅ (gerçek tarayıcıda doğrulandı) |
 
-### Doğrulanamayan / açık nokta
+### Kullanıcı doğrulaması — 2026-08-05
 
-Gerçek bir mikrofonla üç testin uçtan uca kaydedilip dinlenmesi, bu ortamda
-(tarayıcı sandbox'ında donanım mikrofon yok) elle denenemedi. Kod yolu otomatik
-testlerle ve gerçek hata senaryosuyla (mikrofon bulunamadı) doğrulandı, ancak
-kullanıcının kendi cihazında bir kez denemesi önerilir.
+Kullanıcı kendi tarayıcısında (gerçek mikrofonla) üç testi de tamamladı ve
+ekran görüntüsüyle paylaştı: üç kayıt "KAYDEDİLDİ" durumunda, süreler 0:04 /
+0:02 / 0:03, "Analiz et" butonu aktif hâle geldi. Yukarıdaki "doğrulanamayan
+nokta" artık kapandı — uçtan uca kayıt akışı gerçek bir cihazda çalışıyor.
 
 ### Sonraki adım
 
