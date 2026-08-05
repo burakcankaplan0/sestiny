@@ -121,3 +121,82 @@ gerektiğinden bırakıldı; onay verilirse temizlenecek.
 ### Sonraki adım
 
 Aşama 2 (Mikrofon ve kayıt akışı) — kullanıcının "devam" onayı bekleniyor.
+
+---
+
+## Aşama 2 — Mikrofon ve Kayıt Akışı · 2026-08-05 · ✅ Tamamlandı
+
+### Eklenen akış
+
+Karşılama ekranından "Başla" ile giriş: Mikrofon Kontrolü → Test 1 (Konuşma) →
+Test 2 (Uzun "A") → Test 3 (Kaydırma) → İnceleme ekranı. Her testten "İncelemeye
+geç/dön" veya "Sonraki test" ile ilerlenir; inceleme ekranından herhangi bir teste
+dönüp yeniden kaydettikten sonra otomatik olarak incelemeye geri dönülür.
+
+### Yeni dosyalar
+
+| Alan | Dosyalar |
+| --- | --- |
+| Ortak tipler | `src/types/recording.ts` (`TestId`, `RecordingResult`, `RecordingsState`) |
+| Mikrofon | `features/microphone-check/useMicrophoneStream.ts`, `useMicrophoneLevel.ts`, `MicrophoneCheck.tsx` |
+| Ses testleri | `features/voice-tests/testConfig.ts`, `useAudioRecorder.ts`, `VoiceTestScreen.tsx`, `RecordingsReview.tsx` |
+| Karşılama | `features/onboarding/WelcomeScreen.tsx` (Aşama 1'deki içerik buraya taşındı) |
+| Paylaşılan | `components/ScreenLayout.tsx`, `styles/buttons.css`, `utils/time.ts` |
+
+### Kapsanan gereksinimler (CLAUDE.md Aşama 2)
+
+- ✅ Mikrofon izni ekranı + tarayıcı desteği kontrolü (`getUserMedia`/`MediaRecorder` varlığı)
+- ✅ Üç test ekranı, her biri test numarası/adı/talimat/örnek süre ile
+- ✅ Kayıt başlatma, durdurma, süre sayacı, maksimum sürede otomatik durdurma
+- ✅ Kaydı dinleme (`<audio controls>`), silme, yeniden kaydetme
+- ✅ Üç kayıt tamamlanmadan "Analiz et" butonu pasif kalıyor
+- ✅ Backend analizi henüz bağlanmadı — buton tıklanınca yalnızca "bir sonraki aşamada eklenecek" mesajı gösteriyor
+- ✅ Aynı anda yalnızca bir kayıt yapılabiliyor (hook seviyesinde de korunuyor)
+- ✅ Sayfa yenilenirse (kayıt varken) `beforeunload` uyarısı çıkıyor
+- ✅ Kayıt, yalnızca kullanıcı butona bastığında başlıyor (otomatik başlamıyor)
+
+### Testler — hepsi geçiyor
+
+| Test | Sonuç |
+| --- | --- |
+| Frontend (Vitest) | ✅ **14/14** (Aşama 1'deki 6 test + yeni 8 test) |
+| Tip kontrolü (`tsc -b`) | ✅ temiz |
+| Lint (oxlint) | ✅ temiz |
+| Üretim derlemesi (`vite build`) | ✅ başarılı |
+
+Yeni testler: mikrofon izni reddedilince Türkçe hata mesajı gösterildiği
+(sahte `DOMException`/`NotAllowedError` ile), kayıt başlatılıp durdurulunca
+durumun değiştiği ve kaydın dinlenebilir hâle geldiği (sahte `MediaRecorder`
+ile), üç kayıt tamamlanmadan/tamamlanınca "Analiz et" butonunun pasif/aktif
+olduğu (`RecordingsReview.test.tsx`), `formatSeconds` yardımcı fonksiyonu.
+
+### Tarayıcıda doğrulama
+
+Gerçek tarayıcıda uçtan uca denendi: "Başla" ile Mikrofon Kontrolü ekranına
+geçildi, "Mikrofona izin ver" butonuna basıldı. Test ortamında gerçek mikrofon
+donanımı olmadığı için tarayıcı `NotFoundError` fırlattı — bu, hata haritalama
+kodunun **gerçek bir hata senaryosunda** doğru çalıştığını kanıtladı: ekranda
+"Mikrofon bulunamadı. Cihazında çalışan bir mikrofon olduğundan emin ol." mesajı
+ve "Tekrar dene" butonu göründü, konsolda hata sızmadı. Gerçek kayıt (start/stop/
+dinleme) adımı mikrofonlu bir cihaz gerektirdiği için burada denenemedi; bu akış
+sahte `MediaRecorder` ile otomatik testte doğrulandı.
+
+### Kabul kriterleri
+
+| Kriter | Durum |
+| --- | --- |
+| Kullanıcı üç ayrı kaydı oluşturabiliyor | ✅ (kod + otomatik test; gerçek mikrofonla elle doğrulanmadı) |
+| Kayıtları dinleyebiliyor | ✅ |
+| Kayıtları ayrı ayrı yeniden yapabiliyor | ✅ |
+| İzin reddi doğru yönetiliyor | ✅ (gerçek tarayıcıda doğrulandı) |
+
+### Doğrulanamayan / açık nokta
+
+Gerçek bir mikrofonla üç testin uçtan uca kaydedilip dinlenmesi, bu ortamda
+(tarayıcı sandbox'ında donanım mikrofon yok) elle denenemedi. Kod yolu otomatik
+testlerle ve gerçek hata senaryosuyla (mikrofon bulunamadı) doğrulandı, ancak
+kullanıcının kendi cihazında bir kez denemesi önerilir.
+
+### Sonraki adım
+
+Aşama 3 (Dosya yükleme ve kalite kontrolü) — kullanıcının "devam" onayı bekleniyor.

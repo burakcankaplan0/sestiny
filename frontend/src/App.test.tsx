@@ -14,8 +14,58 @@ function mockFetchOnceOk() {
   );
 }
 
+/** Testlerde gerçek MediaRecorder yerine kullanılan basit sahte kayıt cihazı. */
+class FakeMediaRecorder {
+  static isTypeSupported() {
+    return true;
+  }
+
+  state: "inactive" | "recording" = "inactive";
+  mimeType = "audio/webm";
+  ondataavailable: ((event: { data: Blob }) => void) | null = null;
+  onstop: (() => void) | null = null;
+
+  start() {
+    this.state = "recording";
+  }
+
+  stop() {
+    this.state = "inactive";
+    this.ondataavailable?.({ data: new Blob(["ses"], { type: this.mimeType }) });
+    this.onstop?.();
+  }
+}
+
+function stubMicrophoneSupport() {
+  vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
+
+  const fakeStream = {
+    getTracks: () => [{ stop: vi.fn() }],
+  } as unknown as MediaStream;
+
+  Object.defineProperty(window.navigator, "mediaDevices", {
+    configurable: true,
+    value: { getUserMedia: vi.fn().mockResolvedValue(fakeStream) } as unknown as MediaDevices,
+  });
+
+  URL.createObjectURL = vi.fn(() => "blob:mock-url");
+  URL.revokeObjectURL = vi.fn();
+}
+
+function stubMicrophoneDenied() {
+  vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
+
+  Object.defineProperty(window.navigator, "mediaDevices", {
+    configurable: true,
+    value: {
+      getUserMedia: vi.fn().mockRejectedValue(new DOMException("İzin reddedildi", "NotAllowedError")),
+    } as unknown as MediaDevices,
+  });
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("Karşılama ekranı", () => {
@@ -81,5 +131,44 @@ describe("Backend bağlantı durumu", () => {
     await waitFor(() => {
       expect(screen.getByText("Backend bağlantısı başarılı")).toBeVisible();
     });
+  });
+});
+
+describe("Mikrofon izni", () => {
+  it("izin reddedildiğinde anlaşılır hata mesajı gösterir", async () => {
+    mockFetchOnceOk();
+    stubMicrophoneDenied();
+    render(<App />);
+
+    await userEvent.click(await screen.findByRole("button", { name: texts.app.startButton }));
+    await userEvent.click(await screen.findByRole("button", { name: texts.microphone.grantButton }));
+
+    expect(await screen.findByText(texts.microphone.permissionDenied)).toBeVisible();
+    expect(screen.queryByRole("button", { name: texts.microphone.continueButton })).not.toBeInTheDocument();
+  });
+});
+
+describe("Ses kaydı akışı", () => {
+  it("kayıt başlatılıp durdurulduğunda durum değişiyor ve kayıt dinlenebiliyor", async () => {
+    mockFetchOnceOk();
+    stubMicrophoneSupport();
+    render(<App />);
+
+    await userEvent.click(await screen.findByRole("button", { name: texts.app.startButton }));
+    await userEvent.click(await screen.findByRole("button", { name: texts.microphone.grantButton }));
+    await userEvent.click(await screen.findByRole("button", { name: texts.microphone.continueButton }));
+
+    // Test 1 (konuşma) ekranındayız.
+    expect(await screen.findByRole("heading", { level: 1, name: "Konuşma testi" })).toBeVisible();
+
+    await userEvent.click(screen.getByRole("button", { name: texts.voiceTest.startButton }));
+
+    expect(screen.getByRole("button", { name: texts.voiceTest.stopButton })).toBeVisible();
+    expect(screen.getByText(texts.voiceTest.recordingInProgress)).toBeVisible();
+
+    await userEvent.click(screen.getByRole("button", { name: texts.voiceTest.stopButton }));
+
+    expect(screen.getByTestId("playback-audio")).toBeInTheDocument();
+    expect(screen.getByText(texts.voiceTest.recordingSaved)).toBeVisible();
   });
 });

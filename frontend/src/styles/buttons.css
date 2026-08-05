@@ -1,0 +1,55 @@
+/* Uygulama genelinde paylaşılan buton görünümleri. */
+
+.btn {
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    filter 0.15s ease,
+    opacity 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.btn--primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.btn--secondary {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background-color: var(--color-surface-muted);
+}
+
+.btn--danger {
+  background-color: transparent;
+  color: var(--color-error-text);
+  border-color: var(--color-error-border);
+}
+
+.btn--danger:hover:not(:disabled) {
+  background-color: var(--color-error-bg);
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}

@@ -119,3 +119,38 @@ bileşenlerin içine dağılırsa bunu gözden geçirmek imkânsızlaşır.
 Yeşil/kırmızı kart, renk körlüğü olan veya ekran okuyucu kullanan biri için bilgi taşımaz.
 **Karar:** Kartta ayrıca "Bağlı / Bağlanamadı / Kontrol ediliyor" metin etiketi var ve
 kart `role="status" aria-live="polite"` ile duyuruluyor.
+
+---
+
+## Aşama 2 — 2026-08-05
+
+### K-018: Mikrofon akışı (MediaStream) tüm oturum boyunca tek sefer alınıyor
+Her testte ayrı `getUserMedia` çağrısı yapmak, kullanıcıya üç kez izin sorusu
+gösterebilir (tarayıcıya göre değişir) ve gereksiz karmaşıklık yaratır.
+**Karar:** İzin, Mikrofon Kontrolü ekranında bir kez istenir; elde edilen
+`MediaStream` App bileşeninde tutulur ve üç test ekranında da yeniden kullanılır.
+Akış yalnızca uygulama kapanırken (unmount) durdurulur.
+
+### K-019: Kayıt makinesi (useAudioRecorder) kendi sonucunu saklamıyor
+Kayıt tamamlandığında hook, sonucu bir `onComplete` callback ile yukarı bildirip
+kendi iç durumunu hemen `idle`'a döndürüyor; "tamamlanan kayıt" tek doğruluk
+kaynağı olarak App'teki `recordings` state'inde tutuluyor.
+**Neden:** Aynı veriyi hem hook içinde hem App'te tutmak senkronizasyon hatasına
+açık olurdu (örn. sil/yeniden kaydet sırasında iki kaynağın çelişmesi).
+
+### K-020: Ses seviyesi göstergesi (mikrofon kontrolü ekranı) yalnızca görsel geri bildirimdir
+Web Audio API (`AnalyserNode`) ile hesaplanan RMS değeri hiçbir yerde saklanmaz
+veya analiz edilmez; yalnızca kullanıcıya "mikrofon çalışıyor" güvenini vermek
+için bir çubuk olarak gösterilir. `AudioContext` desteklenmeyen bir tarayıcıda
+özellik sessizce devre dışı kalır (seviye her zaman 0 döner), akışı bozmaz.
+
+### K-021: Test süresi eşikleri (min/önerilen/maks) `testConfig.ts` içinde tek merkezde
+CLAUDE.md'nin "ses analizi eşiklerini merkezi config'te tut" kuralı burada da
+uygulandı: üç testin talimat metni ve süre sınırları `VOICE_TESTS` dizisinde,
+bileşenlerin içine dağılmadan tutuluyor.
+
+### K-022: "Sonraki" butonu yalnızca minimum süre karşılanınca aktifleşiyor
+Kayıt kalitesi kontrolü (RMS, clipping, sessizlik) backend'in işi (Aşama 3);
+ama süre kontrolü tamamen istemci tarafında, anında yapılabilecek bir kontrol.
+**Karar:** İstemci yalnızca "kayıt en az min saniye mi" kontrolü yapar; daha
+gelişmiş kalite kontrolleri backend'e bırakılır, burada tekrarlanmaz.
