@@ -587,3 +587,29 @@ Türkçe şarkı eklenmiyor, uydurma veri oluşturulmuyor. Bu durum
 `docs/PROGRESS.md`'ye tekrar açıkça not edildi; ileride güvenilir bir
 Türkçe kaynak bulunursa (ör. bir Türk vokal koçunun yayınladığı bir liste)
 kolayca eklenebilir — veri modeli buna zaten hazır (`language` alanı).
+
+### K-058: Telifli ses dosyalarını indirip analiz etme fikri reddedildi; bunun yerine büyük bir singingcarrots.com taraması yapıldı
+Kullanıcı, Spotify Türkiye Top 50 gibi listelerden şarkı dosyalarını
+indirip Sestiny'nin kendi analiz motoruyla ölçmeyi önerdi ("ben dosyaları
+sana atayım, telif sorununu kendim hallederim"). İki gerekçeyle reddedildi:
+(1) Telifli ticari kaydı indirmenin (Spotify/YouTube fark etmeksizin)
+yasal bir yolu yok — Spotify Premium'un çevrimdışı indirmesi bile DRM
+şifreli, analiz edilebilir bir dosya vermiyor; kullanıcının "sorumluluğu
+üstlenmesi" bunu değiştirmiyor çünkü dosyayı işleyip sonucu canlı siteye
+yükleyecek olan yapay zekâ asistanının kendisi. (2) Sestiny'nin
+`librosa.pyin` tabanlı analiz motoru tek, temiz bir ses için tasarlandı
+(K-008); davul/bas/gitar/çoklu vokal içeren tam prodüksiyonlu bir kayıtta
+çalıştırılırsa muhtemelen enstrüman frekanslarını yanlışlıkla nota
+sanıp hatalı bir aralık üretir — bunu `verified: true` diye yayınlamak,
+uydurma kadar zararlı bir güvenilirlik yanılsaması yaratırdı.
+**Karar:** Bunun yerine `singingcarrots.com`'da (zaten K-047'den beri
+kullanılan, insan tarafından belirlenmiş/yayınlanmış gerçek kaynak) çok
+daha büyük bir tarama yapıldı: tek tek popüler şarkı sayfaları (32 deneme,
+~27 başarı) taranarak havuz 29'dan **56 gerçek şarkıya** çıkarıldı — Queen,
+Elton John, David Bowie, Whitney Houston, Beyoncé, Taylor Swift, Nirvana,
+U2, ABBA, The Beatles, Fleetwood Mac, Amy Winehouse ve daha fazlası.
+Ayrıca `singingcarrots.com`'un "bu aralıktaki şarkılar" listeleme
+sayfaları da denendi (ör. `/vocal-range/C3-C5`) ama bunlar çoğunlukla az
+tanınan kilise/ilahi şarkıları çıkardı — kullanıcının istediği "yüksek
+popülerlik" kriterine uymadığı için o sonuçlar kullanılmadı, yalnızca
+tek tek doğrulanan tanınmış hit şarkılar eklendi.

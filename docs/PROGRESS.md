@@ -927,3 +927,46 @@ kolayca eklenebilir — veri modeli zaten `language` alanını destekliyor.
 Kullanıcı isterse belirli Türkçe şarkı/sanatçı önerip kaynak paylaşabilir
 (ör. bir vokal koçunun videosu/yazısı) — o zaman doğrudan eklenebilir.
 Aksi hâlde bu boşluk açık kalıyor.
+
+---
+
+## Şarkı Havuzu — Büyük Genişletme · 2026-08-06
+
+Kullanıcı "1000+ şarkı" hedefiyle telifli ses dosyalarını indirip
+Sestiny'nin kendi motoruyla analiz etmeyi önerdi. Bu reddedildi (bkz.
+K-058): hem yasal indirme yolu yok hem de analiz motoru tam prodüksiyonlu
+kayıtlar için değil, tek/temiz ses için tasarlandı — o yolla üretilecek
+veri hem izinsiz hem güvenilmez olurdu. Bunun yerine mevcut kanıtlanmış
+yöntemle (singingcarrots.com, gerçek kaynak URL'i) büyük bir tarama
+yapıldı.
+
+### Yapılanlar
+
+- 32 popüler şarkı denendi, 27'si başarıyla doğrulandı: Queen, Elton
+  John, George Michael, Whitney Houston, Sia, Katy Perry, Rihanna,
+  Beyoncé, Christina Aguilera, Taylor Swift, Shawn Mendes, Imagine
+  Dragons, Maroon 5, Oasis, Nirvana, U2, Bon Jovi, Fleetwood Mac, ABBA,
+  The Beatles (Hey Jude), David Bowie, Eric Clapton, Amy Winehouse,
+  Alicia Keys, Coldplay (Yellow), Snow Patrol, Lewis Capaldi.
+- Gerçek şarkı havuzu **29 → 56'ya** çıktı (demo 12 ile birlikte toplam
+  68 şarkılık öneri havuzu).
+- `singingcarrots.com`'un "aralığa göre listeleme" sayfaları da denendi
+  ama sonuçlar çoğunlukla az tanınan ilahi/kilise müziğiydi — kullanıcının
+  istediği "yüksek popülerlik" kriterine uymadığı için kullanılmadı,
+  yalnızca tek tek doğrulanan tanınmış hitler eklendi.
+- Türkçe şarkı durumu değişmedi — hâlâ kaynak yok (bkz. yukarıdaki kayıt).
+
+### Testler
+
+| Test | Sonuç |
+| --- | --- |
+| Backend (pytest) | ✅ 55/55 (regresyon yok) |
+| JSON doğrulama (56 şarkı, ID çakışması yok, min<max, kaynak URL'i var) | ✅ |
+
+### Sonraki adım
+
+Bu değişiklik commit'lenip push edilecek, Render otomatik yeniden build
+edecek. Kullanıcı isterse canlı sitede yeni şarkıların göründüğünü
+doğrulayabilir. "1000+" hedefine ulaşmak için bu tarzda birden fazla
+oturum daha gerekecek — bugünkü tur, yöntemin ölçeklenebilir olduğunu
+gösterdi (32 denemede %84 başarı oranı).
