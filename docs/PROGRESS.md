@@ -853,18 +853,37 @@ adres (`https://sestiny.vercel.app`) açılıp doğrulandı: "SUNUCU BAĞLANTISI
 BAĞLI / Backend bağlantısı başarılı" görünüyor, konsolda hata yok
 (ekran görüntüsüyle kanıtlandı).
 
-### Doğrulanamayan tek nokta
+### Uçtan uca gerçek kullanıcı testi — tamamlandı
 
-Mikrofonlu tam uçtan uca akış (3 test kaydı → analiz → sonuç → öneri)
-gerçek internet adresi üzerinden, gerçek bir mikrofonla henüz denenmedi —
-yalnızca bağlantının kurulduğu (health check) doğrulandı. Kullanıcı
-isterse kendi tarayıcısında/telefonunda tüm akışı deneyip sonucu
-paylaşabilir.
+Kullanıcı, adresi kendi telefonuna gönderip gerçek mikrofonuyla tüm akışı
+(mikrofon izni → 3 test kaydı → analiz → sonuç ekranı) canlı adres
+üzerinden denedi. Sonuç: analiz tamamlandı (backend'in Render'ın ücretsiz
+katmanında "uyanması" + gerçek analiz nedeniyle ~1 dakika sürdüğü
+gözlemlendi — bu, aşağıdaki performans notuyla tutarlı, bir hata değil).
+Sonuç ekranı doğru Türkçe kartlarla geldi: "Orta-Düşük Merkezli Ses
+Profili", gözlemlenen aralık F#2–A#2 (4 yarı ton), %4 analiz güveni ile
+düşük güven uyarısı, ve **şarkı önerisi bölümü boş çıktığında nedenini
+açıklayan kutu** (K-050'nin canlıda ilk gerçek doğrulaması) — kaydırma
+testinin güvenilir sonuç vermediği ve nasıl daha iyi kayıt yapılabileceği
+anlatıldı. Uydurma bir öneri sunulmadı; bu doğru/beklenen davranış.
+
+Bu, benim (yapay zekâ asistanı) doğrulayamadığım son noktayı da kapatıyor:
+uygulama artık gerçek bir kullanıcıda, gerçek bir cihazda, gerçek internet
+üzerinden uçtan uca çalıştığı kanıtlanmış durumda.
+
+**Performans notu:** Canlı backend'e sentetik bir ses dosyasıyla `curl` ile
+yapılan doğrudan test, "uyanık" durumdaki backend'de bile analizin ~22
+saniye sürdüğünü gösterdi (yerelde neredeyse anındaydı) — Render'ın
+ücretsiz katmanının CPU'su zayıf. Frontend'de bir istemci tarafı zaman
+aşımı (timeout) olmadığı için (`App.tsx` — `AbortController` yalnızca
+bileşen kaldırılırsa iptal ediyor, süre bazlı değil) uygulama sessizce
+başarısız olmuyor, ne kadar sürerse sürsün cevabı bekliyor.
 
 ### Sonraki adım
 
-Proje artık hem yerel hem canlı olarak çalışıyor. Kullanıcı isterse
-`https://sestiny.vercel.app` adresini başkalarıyla paylaşıp gerçek
-kullanıcı testine açabilir. Not: Render'ın ücretsiz katmanı birkaç dakika
-boşta kalınca "uyur" — ilk istek bu durumda 10-30 saniye sürebilir, bu
-beklenen bir davranış, hata değil.
+Aşama 8 hem kod hem gerçek canlı kullanım açısından tamamlandı. Kullanıcı
+isterse `https://sestiny.vercel.app` adresini başkalarıyla paylaşıp daha
+fazla gerçek kullanıcı testi toplayabilir. Bilinen davranış: Render'ın
+ücretsiz katmanı birkaç dakika boşta kalınca "uyur", ilk istek bu yüzden
+10-30 saniye + ~20 saniye analiz süresi toplayıp ~1 dakikaya kadar
+sürebilir — bu beklenen bir durum, hata değil.
