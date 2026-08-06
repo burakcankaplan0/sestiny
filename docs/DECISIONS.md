@@ -557,3 +557,33 @@ bir bağımlılık pip tarafından örtük şekilde değiştiğinde (elle
 `requirements.txt` hemen `pip freeze` ile karşılaştırılıp güncellenmeli —
 aksi hâlde yerelde çalışan bir kurulum, temiz bir ortamda (CI, PaaS)
 sessizce farklı davranabiliyor.
+
+---
+
+## Şarkı havuzu genişletmesi — 2026-08-06
+
+### K-057: 13 yeni gerçek şarkı eklendi; Türkçe şarkı için hâlâ kaynak bulunamadı
+Kullanıcı hem daha fazla yabancı hem Türkçe gerçek şarkı istedi. K-047'nin
+kuralı (gerçek şarkı aralığı yalnızca gösterilebilir bir kaynaktan alınır,
+hafızadan uydurulmaz) burada da harfiyen uygulandı.
+**Yabancı şarkılar:** `singingcarrots.com`'da 13 yeni şarkı doğrulandı (The
+Beatles, Whitney Houston, John Legend, Michael Jackson, Bruno Mars, Sam
+Smith, Coldplay, Billie Eilish, Guns N' Roses, Frank Sinatra, Louis
+Armstrong, BTS, Toto) — her biri gerçek şarkı sayfası URL'i ile
+`verified_songs.json`'a eklendi (toplam 16 → 29). Aralıklar farklı ses
+tiplerini kapsayacak şekilde seçildi: en düşük Sweet Child o' Mine (F#2),
+en dar/kolay bad guy (11 yarı ton), en geniş Sweet Child o' Mine (33 yarı
+ton, verse ile Axl Rose'un üst register çığlıklarını birlikte kapsadığı
+için).
+**Türkçe şarkılar:** Bu sefer daha kapsamlı arandı — `singingcarrots.com`'un
+tüm sanatçı listesi tarandı, Tarkan/Sezen Aksu/Ajda Pekkan/Zeki
+Müren/Ahmet Kaya/MFÖ için doğrudan sayfa/arama denendi, alternatif kaynaklar
+(tessitura siteleri, akor/BPM siteleri) araştırıldı. **Hiçbir kaynakta
+Türkçe şarkı için gerçek nota aralığı verisi bulunamadı** — akor/BPM
+siteleri (Tunebat, SongBPM) yalnızca müzikal tonu (key) veriyor, bu gerçek
+söylenen nota aralığıyla aynı şey değil, o yüzden kullanılmadı.
+**Karar:** K-047'deki karar aynen geçerliliğini koruyor — kaynak yoksa
+Türkçe şarkı eklenmiyor, uydurma veri oluşturulmuyor. Bu durum
+`docs/PROGRESS.md`'ye tekrar açıkça not edildi; ileride güvenilir bir
+Türkçe kaynak bulunursa (ör. bir Türk vokal koçunun yayınladığı bir liste)
+kolayca eklenebilir — veri modeli buna zaten hazır (`language` alanı).

@@ -887,3 +887,43 @@ fazla gerçek kullanıcı testi toplayabilir. Bilinen davranış: Render'ın
 ücretsiz katmanı birkaç dakika boşta kalınca "uyur", ilk istek bu yüzden
 10-30 saniye + ~20 saniye analiz süresi toplayıp ~1 dakikaya kadar
 sürebilir — bu beklenen bir durum, hata değil.
+
+---
+
+## Şarkı Havuzu Genişletmesi · 2026-08-06
+
+Kullanıcı daha fazla yabancı ve Türkçe gerçek şarkı istedi.
+
+### Yapılanlar
+
+- `singingcarrots.com`'da 13 yeni gerçek şarkı araştırılıp doğrulandı (bkz.
+  K-057): The Beatles, Whitney Houston, John Legend, Michael Jackson,
+  Bruno Mars, Sam Smith, Coldplay, Billie Eilish, Guns N' Roses, Frank
+  Sinatra, Louis Armstrong, BTS, Toto. Havuz 16 → **29 gerçek şarkıya**
+  çıktı (+ 12 demo şarkı, toplam 41).
+- **Türkçe şarkı için yine kaynak bulunamadı** — bu sefer daha kapsamlı
+  arandı (sanatçı listesi taraması, 6 farklı Türk sanatçı için doğrudan
+  deneme, akor/BPM siteleri gibi alternatif kaynaklar). Akor/BPM
+  siteleri yalnızca müzikal tonu (key) veriyor — bu, şarkının gerçekten
+  söylenen nota aralığı değil, o yüzden veri kaynağı olarak kullanılmadı
+  (kullanılsaydı yanıltıcı olurdu). Uydurma bir Türkçe liste
+  oluşturulmadı.
+
+### Testler
+
+| Test | Sonuç |
+| --- | --- |
+| Backend (pytest) | ✅ 55/55 (regresyon yok) |
+| JSON doğrulama (ID çakışması, min<max, verified=true, kaynak URL'i) | ✅ |
+
+### Doğrulanamayan / açık nokta
+
+Türkçe gerçek şarkı verisi hâlâ yok. Güvenilir bir kaynak (ör. bir Türk
+vokal koçunun/topluluğunun yayınladığı doğrulanabilir bir liste) bulunursa
+kolayca eklenebilir — veri modeli zaten `language` alanını destekliyor.
+
+### Sonraki adım
+
+Kullanıcı isterse belirli Türkçe şarkı/sanatçı önerip kaynak paylaşabilir
+(ör. bir vokal koçunun videosu/yazısı) — o zaman doğrudan eklenebilir.
+Aksi hâlde bu boşluk açık kalıyor.
