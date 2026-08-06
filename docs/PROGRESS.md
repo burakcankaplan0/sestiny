@@ -659,3 +659,13 @@ ve doğru skorla sıralı geldi.
 ### Sonraki adım
 
 Aşama 8 (Yayına hazırlık) — hâlâ yalnızca ayrıca açık onayla başlanacak.
+
+---
+
+## Proje durdu — kullanıcı kararı · 2026-08-06
+
+Kullanıcıya Aşama 8'e mi geçileceği yoksa burada mı durulacağı soruldu.
+**Karar: burada durulsun, uygulama kendi bilgisayarında kullanılacak.**
+Proje Aşama 7 + gerçek şarkı verisi ile tamamlanmış sayılıyor. Aşama 8
+(yayına hazırlık: production ortamı, HTTPS, deploy) başlatılmadı; ileride
+kullanıcı isterse ayrıca talep etmesi yeterli.
