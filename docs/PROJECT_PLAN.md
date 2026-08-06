@@ -145,7 +145,7 @@ Her aşama sonunda **durulur ve kullanıcının "devam" onayı beklenir**.
 | 5 | Sonuç ekranı (Türkçe kartlar, uyarı metni, düşük güven durumları) | ✅ Tamamlandı |
 | 6 | Demo şarkı verisi, eşleştirme algoritması, öneri kartları | ✅ Tamamlandı |
 | 7 | Testler, erişilebilirlik, mobil kontrol, kod temizliği, dokümantasyon | ✅ Tamamlandı |
-| 8 | Yayına hazırlık — **yalnızca ayrıca açık onay verilirse** | 🚧 Kod hazır; canlı deploy kullanıcı eylemi bekliyor (bkz. K-051) |
+| 8 | Yayına hazırlık — **yalnızca ayrıca açık onay verilirse** | ✅ Tamamlandı — canlıda: https://sestiny.vercel.app (bkz. K-051, K-056) |
 
 ### Aşama kabul kriterleri
 

@@ -14,13 +14,12 @@ verisi eklendi. Uçtan uca akış çalışıyor: kayıt yap → analiz et → ta
 profilini ve sana uygun şarkı önerilerini gör — artık 12 demo kaydın yanında
 16 gerçek, kaynaklı şarkı da (`singingcarrots.com`'dan) öneriliyor.
 
-🚧 **Aşama 8 (Yayına hazırlık) kullanıcı onayıyla başladı** (bkz.
-`docs/DECISIONS.md` K-051). Kod tabanı gerçek bir internet dağıtımına
-(Render + Vercel, ücretsiz katman) hazır hâlde: prod-güvenli varsayılanlar,
-hız sınırlama, deploy manifestleri — bkz. aşağıdaki "Yayına alma" bölümü.
-**Gerçek canlı dağıtım henüz yapılmadı** — hesap açma/repo bağlama gibi
-adımlar kullanıcı eylemi gerektiriyor, bu yüzden "canlıda çalışıyor" iddia
-edilmiyor (bkz. `docs/PROGRESS.md`).
+✅ **Aşama 8 (Yayına hazırlık) tamamlandı — uygulama gerçekten canlıda.**
+Frontend: **https://sestiny.vercel.app** · Backend: `https://sestiny-backend.onrender.com`
+(Render'ın ücretsiz katmanı birkaç dakika boşta kalınca "uyur" — ilk istek
+10-30 saniye sürebilir, bu normal). Kuruluş sürecinde gerçek bir hata
+bulunup düzeltildi (`requirements.txt`'teki yanlış bir numpy pini,
+bkz. `docs/DECISIONS.md` K-056). Ayrıntılar için `docs/PROGRESS.md`.
 
 ## Nasıl çalışır?
 

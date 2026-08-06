@@ -834,14 +834,37 @@ etmesi bekleniyor.
 | Bileşen | Durum |
 | --- | --- |
 | Frontend (Vercel) | ✅ Canlı — `https://sestiny.vercel.app` |
-| Backend (Render) | 🚧 Düzeltme push edildi, yeniden build bekleniyor — henüz canlı olduğu doğrulanmadı |
-| Uçtan uca (gerçek internetten mikrofonla test) | ⏸️ Backend canlı olmadan denenemez |
+| Backend (Render) | ✅ Canlı — `https://sestiny-backend.onrender.com`, düzeltme sonrası build başarılı |
+| CORS (iki gerçek origin arasında) | ✅ Doğrulandı — Vercel adresi izinli, bilinmeyen origin reddediliyor |
+| Uçtan uca (gerçek internetten) | ✅ Doğrulandı — bkz. aşağıda |
+
+Yayına almanın son adımında bir eksik daha bulundu: `render.yaml`'daki
+`SESTINY_ALLOWED_ORIGINS` (`sync: false`) Blueprint kurulumunda hiç
+otomatik alan olarak görünmemiş, kullanıcı bunu Render'ın Environment
+sekmesinden elle eklemek zorunda kaldı (README'de bu adım zaten vardı, ama
+Blueprint akışında hatırlatma olmadığı ilk seferde atlanmasına yol açtı).
+Eklenince CORS `curl` ile doğrulandı: Vercel origin'i `access-control-allow-origin`
+başlığı alıyor, bilinmeyen origin almıyor.
+
+**Vercel `VITE_API_BASE_URL` güncellendi ve yeniden deploy edildi.**
+Derlenmiş JS paketi kontrol edildi: gerçek backend adresi (`sestiny-backend.onrender.com`)
+gömülü, eski geçici adres (`127.0.0.1`) kalmamış. Tarayıcıda gerçek canlı
+adres (`https://sestiny.vercel.app`) açılıp doğrulandı: "SUNUCU BAĞLANTISI:
+BAĞLI / Backend bağlantısı başarılı" görünüyor, konsolda hata yok
+(ekran görüntüsüyle kanıtlandı).
+
+### Doğrulanamayan tek nokta
+
+Mikrofonlu tam uçtan uca akış (3 test kaydı → analiz → sonuç → öneri)
+gerçek internet adresi üzerinden, gerçek bir mikrofonla henüz denenmedi —
+yalnızca bağlantının kurulduğu (health check) doğrulandı. Kullanıcı
+isterse kendi tarayıcısında/telefonunda tüm akışı deneyip sonucu
+paylaşabilir.
 
 ### Sonraki adım
 
-Render'ın yeni build'inin bu sefer başarılı olup olmadığı kontrol edilecek.
-Başarılıysa backend'in gerçek adresi alınıp Vercel'deki `VITE_API_BASE_URL`
-o adresle güncellenip frontend yeniden deploy edilecek (Vite bu değeri
-derleme anında koda gömüyor). Ardından gerçek internet üzerinden uçtan uca
-bir deneme (mikrofon izni, 3 test, analiz) yapılıp bu kayda eklenecek —
-o ana kadar "canlı URL'ler çalışıyor" doğrulanmış sayılmaz.
+Proje artık hem yerel hem canlı olarak çalışıyor. Kullanıcı isterse
+`https://sestiny.vercel.app` adresini başkalarıyla paylaşıp gerçek
+kullanıcı testine açabilir. Not: Render'ın ücretsiz katmanı birkaç dakika
+boşta kalınca "uyur" — ilk istek bu durumda 10-30 saniye sürebilir, bu
+beklenen bir davranış, hata değil.
