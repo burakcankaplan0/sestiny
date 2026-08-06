@@ -21,6 +21,10 @@ librosa==0.11.0
 # örtük/geçişli bir bağımlılık değil, açıkça pinlenmiş bir gereksinimdir.
 scipy==1.18.0
 
+# Hız sınırlama (Aşama 8: yayına hazırlık, bkz. K-053) — bellek içi sayaç,
+# Redis gerekmez (backend zaten tek process çalışır).
+slowapi==0.1.10
+
 # Test
 pytest==8.3.4
 # httpx doğrudan import edilmez; FastAPI'nin TestClient'ı arka planda onu kullanır.

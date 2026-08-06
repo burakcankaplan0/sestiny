@@ -145,7 +145,7 @@ Her aşama sonunda **durulur ve kullanıcının "devam" onayı beklenir**.
 | 5 | Sonuç ekranı (Türkçe kartlar, uyarı metni, düşük güven durumları) | ✅ Tamamlandı |
 | 6 | Demo şarkı verisi, eşleştirme algoritması, öneri kartları | ✅ Tamamlandı |
 | 7 | Testler, erişilebilirlik, mobil kontrol, kod temizliği, dokümantasyon | ✅ Tamamlandı |
-| 8 | Yayına hazırlık — **yalnızca ayrıca açık onay verilirse** | ⬜ |
+| 8 | Yayına hazırlık — **yalnızca ayrıca açık onay verilirse** | 🚧 Kod hazır; canlı deploy kullanıcı eylemi bekliyor (bkz. K-051) |
 
 ### Aşama kabul kriterleri
 
@@ -156,6 +156,12 @@ Her aşama sonunda **durulur ve kullanıcının "devam" onayı beklenir**.
 - **5:** JSON kullanıcı dostu Türkçe kartlara dönüşüyor, düşük güven açıkça anlatılıyor, mobilde düzgün.
 - **6:** Demo veriden tutarlı öneri çıkıyor, aralık değişince sıralama değişiyor, ton önerisi matematiksel doğru.
 - **7:** Tüm testler geçiyor, README doğrulanmış kurulum adımları içeriyor.
+- **8:** Prod-güvenli varsayılanlar (debug kapalı), CORS gerçek frontend origin'ine
+  ayarlanabilir, hız sınırlama çalışıyor ve test ediliyor, deploy manifestleri
+  (render.yaml, runtime.txt) mevcut, README'de numaralı Render+Vercel kontrol
+  listesi var. **Gerçek canlı URL'lerin çalıştığının doğrulanması bu kabul
+  kriterinin dışında** — hesap açma/deploy kullanıcı eylemi gerektirir, yapay
+  zekâ asistanı tarafından doğrulanamaz (bkz. `docs/PROGRESS.md`).
 
 ## 9. Test planı
 

@@ -130,6 +130,12 @@ DIFFICULTY_SCORE_PENALTY: dict[str, int] = {"kolay": 0, "orta": 5, "zor": 10}
 # CLAUDE.md: "En uygun 5-10 sonucu sırala."
 MAX_RECOMMENDATIONS = 10
 
+# ---------- Hız sınırlama (Aşama 8: yayına hazırlık, bkz. K-053) ----------
+# CPU-yoğun analiz uç noktası (librosa pitch analizi) herkese açık internete
+# çıktığında IP başına bu sıklıkla sınırlanır. Format, slowapi/limits
+# kütüphanesinin beklediği "<sayı>/<birim>" string'idir.
+ANALYZE_SESSION_RATE_LIMIT = "5/minute"
+
 
 class Settings(BaseSettings):
     """Ortam değişkenlerinden okunan uygulama ayarları."""
@@ -143,7 +149,12 @@ class Settings(BaseSettings):
 
     host: str = "127.0.0.1"
     port: int = 8000
-    debug: bool = True
+    # Varsayılan olarak kapalı (K-052): ayarlanmamış bir ortamda (ör. bir PaaS'a
+    # SESTINY_DEBUG env var'ı unutularak deploy edilirse) güvenli tarafta kalınır.
+    # Bu, FastAPI'nin traceback sızdıran debug modunu ETKİLEMEZ (main.py'de zaten
+    # hiç kullanılmıyor, o her zaman kapalı) — yalnızca log seviyesini belirler
+    # (bkz. app/core/logging.py: configure_logging).
+    debug: bool = False
 
     # Virgülle ayrılmış liste olarak yazılır: "http://localhost:5173,http://127.0.0.1:5173"
     # Vite hem localhost hem 127.0.0.1 üzerinden açılabildiği için ikisi de varsayılan.

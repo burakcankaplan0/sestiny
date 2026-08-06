@@ -25,7 +25,11 @@ bu profile uygun şarkılar önermeyi hedefleyen web tabanlı bir uygulamadır.
 - Backend: Python 3.11+ + FastAPI + librosa/NumPy/SciPy/SoundFile.
 - Kullanıcı hesabı **yok**, veritabanı **yok**, ödeme **yok**, harici AI API **yok**.
 - Gerçek zamanlı pitch takibi **yok**. Docker **yok**. Supabase **yok**.
-- Proje tamamen lokal çalışır.
+- Proje varsayılan olarak tamamen lokal geliştirilir. Yayına alma (deploy),
+  yalnızca kullanıcının Aşama 8 için ayrıca ve açıkça verdiği onayla,
+  ücretsiz katman PaaS üzerinde (bkz. K-051) yapılabilir — bu durumda bile
+  yukarıdaki diğer kısıtlar (hesap yok, veritabanı yok, ödeme yok, harici AI
+  API yok, Docker yok, Supabase yok) aynen geçerliliğini korur.
 - Arayüz dili Türkçe.
 
 ## Gizlilik

@@ -27,6 +27,10 @@ export class ApiError extends Error {
 }
 
 async function handleJsonResponse<T>(response: Response): Promise<T> {
+  if (response.status === 429) {
+    throw new ApiError(texts.errors.rateLimited, `HTTP ${response.status}`);
+  }
+
   if (!response.ok) {
     throw new ApiError(texts.errors.server, `HTTP ${response.status}`);
   }

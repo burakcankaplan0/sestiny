@@ -5,10 +5,11 @@ import tempfile
 import uuid
 
 import numpy as np
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, HTTPException, Request, UploadFile
 
-from app.core.config import TARGET_SAMPLE_RATE, TestId, get_settings
+from app.core.config import ANALYZE_SESSION_RATE_LIMIT, TARGET_SAMPLE_RATE, TestId, get_settings
 from app.core.logging import get_logger
+from app.core.rate_limit import limiter
 from app.schemas.analysis import (
     AnalyzeSessionResponse,
     GlideAnalysis,
@@ -110,7 +111,9 @@ def _combine_quality(reports: dict[TestId, FileQualityResult]) -> QualitySummary
 
 
 @router.post("/analyze-session", response_model=AnalyzeSessionResponse)
+@limiter.limit(ANALYZE_SESSION_RATE_LIMIT)
 async def analyze_session(
+    request: Request,
     speech: UploadFile,
     sustained_vowel: UploadFile,
     glide: UploadFile,

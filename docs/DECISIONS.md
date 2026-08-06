@@ -447,3 +447,85 @@ stiliyle bir açıklama kutusu gösteriyor: "Kaydırma testinde tahmini rahat
 bölgen güvenilir şekilde belirlenemediği için şarkı önerisi oluşturulamadı"
 + testi nasıl daha güvenilir yapabileceğine dair somut bir öneri (sessiz
 ortam, sesi zorlamadan yavaşça kaydırma). Test güncellendi.
+
+---
+
+## Aşama 8 — Yayına Hazırlık — 2026-08-06
+
+### K-051: CLAUDE.md'nin "proje tamamen lokal çalışır" kuralı, kullanıcının açık onayıyla gevşetildi
+2026-08-06 tarihli `docs/PROGRESS.md` kaydı, kullanıcının o gün "burada
+durulsun, uygulama kendi bilgisayarında kullanılacak" kararını verdiğini ve
+Aşama 8'in bilinçli olarak başlatılmadığını gösteriyor. Aynı gün içinde
+kullanıcı bu kararı değiştirip Aşama 8'e geçmek istediğini ayrıca ve açıkça
+belirtti; netleştirme sorusunda "gerçek internet yayını" istediğini ve
+hosting için "ücretsiz katman PaaS" tercih ettiğini söyledi.
+**Karar:** `CLAUDE.md`'nin "Proje tamamen lokal çalışır" maddesi şu şekilde
+değiştirildi: proje varsayılan olarak lokal geliştirilir, ama kullanıcının
+Aşama 8 için ayrıca onayıyla ücretsiz katman PaaS'ta (Render + Vercel)
+yayınlanabilir. CLAUDE.md'nin diğer tüm kısıtları (hesap yok, veritabanı
+yok, ödeme yok, harici AI API yok, Docker yok, Supabase yok) hiçbir
+değişiklik olmadan geçerliliğini koruyor — yayına almak bu kısıtların
+hiçbirini ihlal etmiyor, yalnızca "yalnızca localhost'ta çalışır" kısıtını
+gevşetiyor. Somut hosting çifti olarak Render (backend) + Vercel (frontend)
+seçildi — ikisi de ücretsiz katmanda Python/Vite'ı destekliyor, otomatik
+HTTPS veriyor. Gerçek hesap açma/repo bağlama/deploy adımları yapay zekâ
+asistanı tarafından yapılamaz (hesap oluşturma yasak eylemler arasında) —
+bu adımlar README'de kullanıcı için numaralı bir kontrol listesi olarak
+bırakıldı.
+
+### K-052: `Settings.debug` varsayılanı `True`'dan `False`'a çevrildi
+Uygulama herkese açık internete çıkacağı için, `SESTINY_DEBUG` env var'ı
+unutularak deploy edilen bir ortamın güvenli tarafta kalması isteniyor.
+Ancak bu değişikliğin gerçekte ne yaptığı konusunda net olmak gerekiyor:
+`main.py` `settings.debug`'ı hiçbir zaman FastAPI'nin kendi (traceback
+sızdıran) debug moduna bağlamıyor — yalnızca log seviyesini (DEBUG/INFO)
+belirliyor (bkz. `configure_logging`). FastAPI'nin traceback sızıntısı zaten
+Aşama 7'de doğrulanmıştı (varsayılan `debug=False`, hiç değişmedi).
+**Karar:** `debug: bool = True` → `debug: bool = False`. Bu "bir traceback
+sızıntısını kapatmak" değil, "ayarlanmamış bir ortamda gereksiz ayrıntılı
+log basılmaması" anlamına geliyor — yorum satırında bu netlik korundu. Yerel
+geliştirme etkilenmiyor: `backend/.env.example` zaten `SESTINY_DEBUG=true`
+öneriyor, geliştirici bunu `.env`'e kopyaladığında eskisi gibi ayrıntılı log
+görmeye devam ediyor.
+
+### K-053: Hız sınırlama `slowapi` ile, IP başına 5/dakika, yalnızca `analyze-session` uç noktasında
+CPU-yoğun `POST /api/v1/analyze-session` (librosa pitch analizi) herkese
+açık internete çıktığında korumasız kalıyordu; `docs/PROGRESS.md` bunu
+zaten Aşama 8 konusu olarak öngörmüştü. Redis gibi harici bir servis
+kurmak, backend zaten tek process çalıştığı için (bkz. README "Bilinen
+sınırlamalar") gereksiz bir karmaşıklık olurdu.
+**Karar:** `slowapi` (bellek içi, `limits` kütüphanesi üzerine kurulu)
+eklendi. Eşik `app/core/config.py`'de `ANALYZE_SESSION_RATE_LIMIT = "5/minute"`
+adlı, açıklamalı bir sabit (CLAUDE.md: sihirli sayı yasağı burada da
+uygulandı). Limiter yalnızca `analyze-session` route dekoratörüne
+uygulandı — `health` gibi ucuz uç noktalar sınırlanmadı. 429 cevabı özel
+bir handler'la (`app/core/rate_limit.py`) Türkçe, ham hata sızdırmayan bir
+mesaja çevriliyor (`RATE_LIMIT_MESSAGE`), frontend `client.ts` bunu ayrı bir
+`texts.errors.rateLimited` mesajına eşliyor. **Test riski ve çözümü:**
+tüm backend testleri aynı `TestClient` (aynı sahte IP) üzerinden çalıştığı
+için, hız sınırlama olduğu gibi eklenseydi başka test dosyalarındaki
+istekler birbirinin limitini sessizce dolduracaktı. `backend/tests/conftest.py`'ye
+her testten önce `limiter.reset()` çağıran bir `autouse` fixture eklendi —
+bu proje için ilk `conftest.py`.
+
+### K-054: Render'ın `$PORT`'una bağlanmak için kod değil, yalnızca start command değiştirildi
+PaaS platformları (Render) kendi `$PORT` env var'ını enjekte edip processin
+ona bağlanmasını bekler. Uygulamanın zaten bir Python giriş noktası
+(`if __name__ == "__main__"`) yok — `uvicorn app.main:app --reload` her
+zaman CLI'dan çalıştırılıyor (bkz. `main.py` docstring'i).
+**Karar:** Koda hiç dokunulmadı. `render.yaml`'ın `startCommand`'i doğrudan
+`uvicorn app.main:app --host 0.0.0.0 --port $PORT` kullanıyor —
+`SESTINY_HOST`/`SESTINY_PORT` ayarları yerel geliştirme için olduğu gibi
+kalıyor (varsayılan `127.0.0.1:8000`), deploy ortamında hiç okunmuyorlar.
+Bu, `Settings`'e platform-özel bir `PORT` okuma mantığı eklemekten daha
+basit ve yerel/deploy davranışını birbirinden net şekilde ayırıyor.
+
+### K-055: Test bağımlılıkları (`pytest`, `httpx`) `requirements.txt`'den ayrı bir dosyaya bölünmedi
+Prod build'e test araçlarının da kurulması ilk bakışta gereksiz gibi
+görünüyor. Ancak bunu ayırmak (`requirements-dev.txt`) iki dosyanın
+senkron tutulmasını, README'nin kurulum komutunun güncellenmesini ve
+`render.yaml`'ın hangi dosyayı kullanacağının netleştirilmesini gerektirir
+— küçük, saf Python paketlerinin (birkaç MB) prod imajına girmesinin
+gerçek maliyeti bu karmaşıklığa değmiyor.
+**Karar:** `requirements.txt` tek dosya olarak kaldı (K-043'teki gibi:
+düşünüldü, gerekçesiyle bilinçli olarak atlandı).

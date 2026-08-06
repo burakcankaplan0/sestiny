@@ -374,4 +374,35 @@ describe("Analiz sırasında hata durumu", () => {
     },
     20000,
   );
+
+  it(
+    "hız sınırlama (429) durumunda ham HTTP kodu değil anlaşılır Türkçe mesaj gösterir",
+    async () => {
+      const user = userEvent.setup();
+      stubMicrophoneSupport();
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.includes("/analyze-session")) {
+          return new Response(JSON.stringify({ detail: "Çok fazla istek gönderildi." }), {
+            status: 429,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({ status: "ok", message: "Backend bağlantısı başarılı" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      });
+
+      render(<App />);
+
+      const analyzeButton = await completeAllRecordingsAndReachReview(user);
+      await user.click(analyzeButton);
+
+      expect(await screen.findByText(texts.errors.rateLimited)).toBeVisible();
+      expect(screen.queryByText(/429/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Çok fazla istek gönderildi\./)).not.toBeInTheDocument();
+    },
+    20000,
+  );
 });

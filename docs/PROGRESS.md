@@ -688,3 +688,114 @@ bir kutu gösteriyor: hangi testin (kaydırma) güvenilir sonuç vermediğini ve
 nasıl daha iyi bir kayıt yapılabileceğini anlatıyor (bkz. K-050).
 33/33 frontend testi (1 güncellendi) geçiyor, tarayıcıda kullanıcının
 paylaştığı senaryo taklit edilerek doğrulandı.
+
+---
+
+## Aşama 8 — Yayına Hazırlık · 2026-08-06 · 🚧 Kod hazır, canlı deploy kullanıcı eylemi bekliyor
+
+Kullanıcı, daha önce (aynı gün) verdiği "burada durulsun, lokal kalsın"
+kararını değiştirip Aşama 8'e geçmeye karar verdi ve gerçek internet yayını
+(ücretsiz katman PaaS) istediğini açıkça belirtti. Bu, CLAUDE.md'nin "proje
+tamamen lokal çalışır" kuralıyla çeliştiği için önce o kural güncellendi
+(bkz. K-051) — geri kalan tüm kısıtlar (hesap/veritabanı/ödeme/harici AI
+API/Docker/Supabase yok) aynen korunarak.
+
+### Yapılanlar
+
+**Prod-güvenli varsayılanlar:**
+- `backend/app/core/config.py`: `Settings.debug` varsayılanı `True`'dan
+  `False`'a çevrildi (K-052) — ayarlanmamış bir ortamda güvenli log
+  seviyesi sağlar; FastAPI'nin traceback sızıntısıyla ilgisi yok, o zaten
+  hiçbir zaman `debug`'a bağlı değildi (Aşama 7'de doğrulanmıştı).
+- CORS (`SESTINY_ALLOWED_ORIGINS`) ve upload limiti zaten env-var tabanlıydı,
+  değişiklik gerekmedi — yalnızca gerçek deploy değerleri README'ye eklendi.
+
+**Hız sınırlama (K-053):**
+- `backend/app/core/rate_limit.py` (yeni): `slowapi` ile IP başına bellek
+  içi sayaç, 429'da ham hata sızdırmayan Türkçe mesaj.
+- `analyze-session` uç noktasına `ANALYZE_SESSION_RATE_LIMIT = "5/minute"`
+  (config.py'de merkezi, açıklamalı sabit) uygulandı.
+- `backend/tests/conftest.py` (yeni, projede ilk `conftest.py`): her testten
+  önce limiter'ı sıfırlayan `autouse` fixture — aksi hâlde tüm test
+  dosyaları aynı sahte IP'yi paylaştığı için birbirini 429'a düşürürdü.
+- Frontend: `texts.errors.rateLimited` + `client.ts`'te 429'un ayrı
+  yakalanması, ham HTTP kodu değil anlaşılır Türkçe mesaj gösteriyor.
+
+**Deploy hazırlığı:**
+- `backend/runtime.txt`: `python-3.12.13` (doğrulanmış sürümle aynı).
+- Repo kökünde `render.yaml`: Render Blueprint (backend web servisi,
+  build/start komutları, env var'lar). Render'ın panel alan adlarının
+  gelecekte değişebileceği açıkça not edildi — README'deki manuel değerler
+  asıl referans.
+- `README.md`: yeni "Yayına alma (deploy)" bölümü — Render + Vercel için
+  numaralı, kopyala-yapıştır kontrol listesi (deploy sırası: önce frontend,
+  sonra backend'e gerçek frontend URL'i, sonra frontend'i gerçek backend
+  URL'iyle yeniden build). "Gizlilik" bölümü, deploy edilirse ses kaydının
+  artık yalnızca kendi bilgisayarda değil seçilen hosting'e (HTTPS
+  üzerinden, kalıcı saklanmadan) gideceğini açıkça belirtecek şekilde
+  güncellendi.
+- `CLAUDE.md`, `docs/PROJECT_PLAN.md`, `docs/DECISIONS.md` (K-051 – K-055)
+  güncellendi.
+
+### Testler — tüm mevcut testler + yeniler geçiyor
+
+| Test | Sonuç |
+| --- | --- |
+| Backend (pytest) | ✅ **55/55** (52 mevcut + `test_config.py` 1 + `test_rate_limit.py` 3 yeni; hiçbir mevcut test rate-limit fixture'ı olmadan bozulmadı) |
+| Frontend (Vitest) | ✅ **34/34** (33 mevcut + 1 yeni: 429 durumunda anlaşılır mesaj) |
+| Tip kontrolü, lint, üretim derlemesi | ✅ temiz |
+
+### Yerel "production-mode" doğrulama (benim yapabildiğim kısım)
+
+Gerçek hesap gerektirmeyen, yerelde çalıştırılabilen adımlar bizzat
+denendi:
+
+- Backend `SESTINY_DEBUG=false SESTINY_ALLOWED_ORIGINS=<gerçek-benzeri-URL>`
+  ile `0.0.0.0:8000`'de başlatıldı: log seviyesi INFO (ayrıntılı değil),
+  `/api/v1/health` 200 döndü.
+- Bilinmeyen bir origin'den (`http://kotu-site.example`) istek atıldığında
+  `access-control-allow-origin` başlığı **yok** — CORS gerçek prod-benzeri
+  bir env var değeriyle de doğru çalışıyor.
+- `curl` ile art arda 6 gerçek istek atıldı: ilk 5'i 200, 6.'sı tam olarak
+  beklenen Türkçe mesajla 429 döndü.
+- `VITE_API_BASE_URL=http://127.0.0.1:8000` ile **gerçek üretim derlemesi**
+  (`npm run build`, dev server değil) alınıp `npm run preview` ile
+  sunuldu; tarayıcıda (Browser pane) açılıp doğrulandı:
+  - Backend'in izin listesinde `localhost:4173` yokken CORS isteği doğru
+    şekilde reddetti (ekranda "Bağlanamadı").
+  - Backend'e izin verilince ekranda "SUNUCU BAĞLANTISI: BAĞLI / Backend
+    bağlantısı başarılı" göründü — derlenmiş bundle'ın `VITE_API_BASE_URL`'i
+    doğru gömdüğü ve gerçek prod-mode backend'e bağlandığı kanıtlandı
+    (ekran görüntüsüyle doğrulandı).
+
+### Doğrulanamayan / açık noktalar (dürüstçe belirtilir, CLAUDE.md gereği)
+
+- **Gerçek bir Render/Vercel hesabıyla canlı deploy hiç yapılmadı.** Hesap
+  açmak, GitHub reposu bağlamak ve deploy'a basmak yapay zekâ asistanının
+  yapabileceği eylemler değil (hesap oluşturma yasak) — bu adımlar
+  README'deki numaralı kontrol listesinde kullanıcı için bırakıldı.
+- Render'ın ücretsiz katmanında `librosa`/`numpy`/`av` gibi native
+  bağımlılıkların gerçek build süresi/timeout riski doğrulanamadı.
+- İki gerçek deploy edilmiş origin arasında CORS'un uçtan uca çalıştığı
+  doğrulanamadı (yalnızca yerel prod-benzeri bir origin ile test edildi).
+- Hız sınırlamanın zaman penceresi dolunca gerçekten sıfırlandığı test
+  edilmedi (freezegun gibi bir zaman taklit aracı gerekir, projede yok) —
+  yalnızca eşiğin aşılınca 429 verdiği doğrulandı.
+
+### Kabul kriterleri
+
+| Kriter | Durum |
+| --- | --- |
+| Prod-güvenli varsayılanlar (debug kapalı) | ✅ |
+| CORS gerçek origin'e ayarlanabilir, bilinmeyeni reddediyor | ✅ (yerel prod-mode ile doğrulandı) |
+| Hız sınırlama çalışıyor ve test ediliyor | ✅ |
+| Deploy manifestleri ve README kontrol listesi mevcut | ✅ |
+| Gerçek canlı URL'ler çalışıyor | ⏸️ Kullanıcı eylemi bekliyor — doğrulanamadı |
+
+### Sonraki adım
+
+Kullanıcı isterse README'deki "Yayına alma" adımlarını kendi Render/Vercel
+hesaplarıyla takip edip gerçek canlı deploy'u yapabilir. Bu tamamlanırsa
+(gerçek URL'ler paylaşılırsa) `docs/PROGRESS.md`'ye bir doğrulama kaydı
+daha eklenmesi gerekir — o ana kadar bu aşama "kod hazır, canlı deploy
+doğrulanmadı" durumunda kalır.

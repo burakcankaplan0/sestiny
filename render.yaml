@@ -1,0 +1,24 @@
+# Render Blueprint — backend'i otomatik kurmayı dener.
+#
+# Doğrulanamayan nokta: Render'ın panel alan adları (rootDir, runtime vb.)
+# zamanla değişebilir; bu dosya yazıldığı tarihte (bkz. docs/DECISIONS.md K-051)
+# geçerli olan şemaya göredir. Blueprint kabul edilmezse README.md'deki
+# "Yayına alma" bölümündeki manuel panel değerlerini kullan — o değerler asıl
+# doğrulanmış/güncel referanstır.
+services:
+  - type: web
+    name: sestiny-backend
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SESTINY_DEBUG
+        value: "false"
+      - key: SESTINY_ALLOWED_ORIGINS
+        sync: false # Render panelinden gerçek Vercel frontend URL'i girilir.
+      - key: SESTINY_MAX_UPLOAD_BYTES
+        value: "10485760"
+      - key: PYTHON_VERSION
+        value: "3.12.13"

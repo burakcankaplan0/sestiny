@@ -33,6 +33,8 @@ export const texts = {
     network:
       "Sunucuya ulaşılamadı. Backend'in çalıştığından ve bağlantından emin olup tekrar dene.",
     server: "Sunucu şu anda yanıt veremiyor. Biraz sonra tekrar dene.",
+    rateLimited:
+      "Çok kısa sürede çok fazla analiz isteği gönderildi. Lütfen bir dakika bekleyip tekrar dene.",
     unexpected: "Beklenmeyen bir sorun oluştu. Tekrar dene.",
   },
 

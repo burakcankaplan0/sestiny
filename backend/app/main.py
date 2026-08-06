@@ -6,10 +6,12 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
 
 from app.api import analysis, health
 from app.core.config import API_V1_PREFIX, get_settings
 from app.core.logging import configure_logging, get_logger
+from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 
 
 def create_app() -> FastAPI:
@@ -33,6 +35,11 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
     )
+
+    # Hız sınırlama: yalnızca analiz uç noktasına uygulanır (bkz. app/api/analysis.py),
+    # ama handler burada, uygulama genelinde kaydedilmeli.
+    application.state.limiter = limiter
+    application.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
     application.include_router(health.router, prefix=API_V1_PREFIX)
     application.include_router(analysis.router, prefix=API_V1_PREFIX)
