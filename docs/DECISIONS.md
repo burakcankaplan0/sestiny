@@ -435,3 +435,15 @@ tutuldu; `recommendation.py`'deki `load_songs()` ikisini birleştirip tek bir
 öneri havuzu oluşturuyor. Frontend'de zaten var olan `verified` alanına göre
 rozet gösterme mantığı (K-042) hiçbir değişiklik gerektirmeden gerçek
 şarkılarda "Demo veri" rozetini otomatik gizliyor.
+
+### K-050: Öneri bölümü boşsa artık sessizce gizlenmiyor, nedenini açıklayan bir not gösteriyor
+Kullanıcı gerçek bir kayıtla denedi ve düşük güvenli bir sonuçta (kaydırma
+testinin tahmini rahat bölgesi belirlenemediği için) "Şarkı önerileri"
+bölümünün hiçbir açıklama olmadan tamamen kaybolduğunu fark etti — bu, "düşük
+güven durumları doğru anlatılıyor" ilkesine (Aşama 5 kabul kriteri) aykırı
+sessiz bir boşluktu.
+**Karar:** `ResultsScreen`, `recommendations` boşsa artık `results__disclaimer`
+stiliyle bir açıklama kutusu gösteriyor: "Kaydırma testinde tahmini rahat
+bölgen güvenilir şekilde belirlenemediği için şarkı önerisi oluşturulamadı"
++ testi nasıl daha güvenilir yapabileceğine dair somut bir öneri (sessiz
+ortam, sesi zorlamadan yavaşça kaydırma). Test güncellendi.

@@ -114,7 +114,16 @@ export function ResultsScreen({ result, onRestart, onBackToReview }: ResultsScre
         </ResultCard>
       </div>
 
-      {result.recommendations.length > 0 && <SongRecommendations recommendations={result.recommendations} />}
+      {result.recommendations.length > 0 ? (
+        <SongRecommendations recommendations={result.recommendations} />
+      ) : (
+        <section className="results__disclaimer" aria-labelledby="recommendations-unavailable-heading">
+          <h2 id="recommendations-unavailable-heading" className="results__disclaimer-title">
+            {texts.results.recommendationsUnavailableTitle}
+          </h2>
+          <p>{texts.results.recommendationsUnavailableText}</p>
+        </section>
+      )}
 
       <section className="results__disclaimer" aria-labelledby="disclaimer-heading">
         <h2 id="disclaimer-heading" className="results__disclaimer-title">

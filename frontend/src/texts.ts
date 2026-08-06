@@ -107,6 +107,9 @@ export const texts = {
     stabilityValue: (label: string, score: number) => `${label} (${score}/100)`,
     secondsValue: (seconds: number) => `${seconds} sn`,
     lowConfidenceNote: "Bu sonucun güveni düşük; temkinli yorumla.",
+    recommendationsUnavailableTitle: "Şarkı önerisi yapılamadı",
+    recommendationsUnavailableText:
+      "Kaydırma testinde tahmini rahat bölgen güvenilir şekilde belirlenemediği için şarkı önerisi oluşturulamadı. Sessiz bir ortamda, sesini zorlamadan kalından inceye yavaşça kaydırarak kaydırma testini yeniden yapman daha güvenilir bir sonuç verebilir.",
 
     rejectedTitle: "Bazı kayıtlar yeniden gözden geçirilmeli",
     rejectedIntro:

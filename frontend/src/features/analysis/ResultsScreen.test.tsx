@@ -168,10 +168,12 @@ describe("ResultsScreen — kabul edilen oturum", () => {
 });
 
 describe("ResultsScreen — şarkı önerileri", () => {
-  it("öneri yoksa bölüm hiç gösterilmez", () => {
+  it("öneri yoksa kart listesi yerine nedenini açıklayan bir not gösterir", () => {
     render(<ResultsScreen result={baseResult({ recommendations: [] })} onRestart={vi.fn()} onBackToReview={vi.fn()} />);
 
     expect(screen.queryByText(texts.recommendations.title)).not.toBeInTheDocument();
+    expect(screen.getByText(texts.results.recommendationsUnavailableTitle)).toBeVisible();
+    expect(screen.getByText(texts.results.recommendationsUnavailableText)).toBeVisible();
   });
 
   it("öneri kartları başlık, sanatçı, tür, zorluk, aralık ve eşleşme yüzdesini gösterir", () => {

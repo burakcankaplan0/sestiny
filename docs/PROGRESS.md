@@ -669,3 +669,22 @@ Kullanıcıya Aşama 8'e mi geçileceği yoksa burada mı durulacağı soruldu.
 Proje Aşama 7 + gerçek şarkı verisi ile tamamlanmış sayılıyor. Aşama 8
 (yayına hazırlık: production ortamı, HTTPS, deploy) başlatılmadı; ileride
 kullanıcı isterse ayrıca talep etmesi yeterli.
+
+---
+
+## Gerçek kullanım sırasında bulunan hata düzeltildi — 2026-08-06
+
+Kullanıcı uygulamayı kendi mikrofonuyla denerken bir kayıtta ("F5-C#6", %5
+güven, kaydırma testinin tahmini rahat bölgesi belirlenemedi) sonuç ekranında
+"Şarkı önerileri" bölümünün hiç görünmediğini fark etti ve nedenini sordu.
+
+**Kök neden:** Öneri, yalnızca kaydırma testinin tahmini rahat bölgesi
+güvenilir şekilde hesaplanabildiyse üretiliyor (K-038 gereği doğru davranış —
+uydurma öneri yapılmıyor). Ama arayüz bu durumda bölümü **hiçbir açıklama
+olmadan** sessizce gizliyordu; kullanıcı "neden yok" diye anlayamadı.
+
+**Düzeltme:** `ResultsScreen`, öneri listesi boşsa artık nedenini açıklayan
+bir kutu gösteriyor: hangi testin (kaydırma) güvenilir sonuç vermediğini ve
+nasıl daha iyi bir kayıt yapılabileceğini anlatıyor (bkz. K-050).
+33/33 frontend testi (1 güncellendi) geçiyor, tarayıcıda kullanıcının
+paylaştığı senaryo taklit edilerek doğrulandı.
