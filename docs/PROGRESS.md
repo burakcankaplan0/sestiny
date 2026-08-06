@@ -770,14 +770,6 @@ denendi:
 
 ### Doğrulanamayan / açık noktalar (dürüstçe belirtilir, CLAUDE.md gereği)
 
-- **Gerçek bir Render/Vercel hesabıyla canlı deploy hiç yapılmadı.** Hesap
-  açmak, GitHub reposu bağlamak ve deploy'a basmak yapay zekâ asistanının
-  yapabileceği eylemler değil (hesap oluşturma yasak) — bu adımlar
-  README'deki numaralı kontrol listesinde kullanıcı için bırakıldı.
-- Render'ın ücretsiz katmanında `librosa`/`numpy`/`av` gibi native
-  bağımlılıkların gerçek build süresi/timeout riski doğrulanamadı.
-- İki gerçek deploy edilmiş origin arasında CORS'un uçtan uca çalıştığı
-  doğrulanamadı (yalnızca yerel prod-benzeri bir origin ile test edildi).
 - Hız sınırlamanın zaman penceresi dolunca gerçekten sıfırlandığı test
   edilmedi (freezegun gibi bir zaman taklit aracı gerekir, projede yok) —
   yalnızca eşiğin aşılınca 429 verdiği doğrulandı.
@@ -790,12 +782,66 @@ denendi:
 | CORS gerçek origin'e ayarlanabilir, bilinmeyeni reddediyor | ✅ (yerel prod-mode ile doğrulandı) |
 | Hız sınırlama çalışıyor ve test ediliyor | ✅ |
 | Deploy manifestleri ve README kontrol listesi mevcut | ✅ |
-| Gerçek canlı URL'ler çalışıyor | ⏸️ Kullanıcı eylemi bekliyor — doğrulanamadı |
+| Gerçek canlı URL'ler çalışıyor | 🚧 Frontend canlı; backend düzeltme sonrası yeniden deploy bekliyor |
+
+---
+
+## Aşama 8 — Gerçek Deploy Denemesi · 2026-08-06
+
+Kullanıcı, README'deki "Yayına alma" adımlarını kendi hesaplarıyla canlıda
+denedi — projenin ilk gerçek üçüncü parti altyapı denemesi. Kod tarafında
+öngörülemeyen bir hata bulundu ve düzeltildi (bkz. K-056).
+
+### Yapılanlar
+
+- **GitHub:** Kullanıcı `github.com/burakcankaplan0/sestiny` deposunu
+  oluşturdu, kod push edildi (`main` dalı, commit `e55eeca`).
+  - Küçük bir güvenlik notu: kullanıcı push için oluşturduğu geçici erişim
+    anahtarını (token) sohbette paylaştı. Anahtar tek seferlik push için
+    kullanılıp hiçbir dosyaya/`git` ayarına kalıcı yazılmadan hemen
+    temizlendi; kullanıcıya anahtarı GitHub'dan iptal etmesi önerildi
+    (kullanıcı bilinçli olarak "kalsın" dedi — kendi hesabı, kendi kararı).
+- **Vercel (frontend):** Kullanıcı GitHub ile giriş yapıp `sestiny`
+  deposunu içe aktardı, Root Directory `frontend` olarak ayarlandı,
+  `VITE_API_BASE_URL` geçici bir değerle deploy edildi. **Başarılı** —
+  frontend artık gerçekten canlı: **`https://sestiny.vercel.app`**
+- **Render (backend):** Kullanıcı Blueprint ile (`render.yaml` otomatik
+  algılandı) `sestiny-backend` servisini oluşturdu, `SESTINY_ALLOWED_ORIGINS`
+  değerini gerçek Vercel adresine ayarladı. **İlk build başarısız oldu.**
+
+### Bulunan gerçek hata: `requirements.txt`'teki numpy pini yanlıştı
+
+Render'ın build log'u incelenince kök neden bulundu: `requirements.txt`
+`numpy==2.5.1` diyordu, ama bu tarihe kadar hiç fark edilmemiş bir şekilde
+yerelde (ve tüm 55 testin geçtiği ortamda) gerçekte kurulu olan sürüm
+`numpy==2.4.6` idi. Render bu farkı hemen ortaya çıkardı: pip, pinlenen
+2.5.1'e uygun bir `numba` (librosa'nın kullandığı bir kütüphane) sürümü
+ararken geriye doğru arama yapıp Python 3.12'yi desteklemeyen çok eski bir
+numba sürümüne düştü ve build çöktü. **Bu, yerel geliştirme ortamının hiçbir
+zaman sıfırdan yeniden kurulmamasının gizlediği bir hataydı** — canlı deploy
+denemesi olmasaydı fark edilmeyecekti.
+
+**Düzeltme:** `numpy` pini gerçek/test edilen sürüme (`2.4.6`) düzeltildi,
+`numba==0.66.0` ve `llvmlite==0.48.0` da açıkça pinlendi (bkz. K-056).
+Düzeltme, sıfırdan bir `.venv` ile (Render'ın yapacağı gibi) yerel olarak
+yeniden denendi: kurulum hiç geri arama yapmadan direkt doğru sürümlere
+indi, **55/55 test bu temiz ortamda da geçti**. Değişiklik commit'lenip
+push edildi — Render'ın bu düzeltmeyle otomatik olarak yeniden build
+etmesi bekleniyor.
+
+### Şu anki durum
+
+| Bileşen | Durum |
+| --- | --- |
+| Frontend (Vercel) | ✅ Canlı — `https://sestiny.vercel.app` |
+| Backend (Render) | 🚧 Düzeltme push edildi, yeniden build bekleniyor — henüz canlı olduğu doğrulanmadı |
+| Uçtan uca (gerçek internetten mikrofonla test) | ⏸️ Backend canlı olmadan denenemez |
 
 ### Sonraki adım
 
-Kullanıcı isterse README'deki "Yayına alma" adımlarını kendi Render/Vercel
-hesaplarıyla takip edip gerçek canlı deploy'u yapabilir. Bu tamamlanırsa
-(gerçek URL'ler paylaşılırsa) `docs/PROGRESS.md`'ye bir doğrulama kaydı
-daha eklenmesi gerekir — o ana kadar bu aşama "kod hazır, canlı deploy
-doğrulanmadı" durumunda kalır.
+Render'ın yeni build'inin bu sefer başarılı olup olmadığı kontrol edilecek.
+Başarılıysa backend'in gerçek adresi alınıp Vercel'deki `VITE_API_BASE_URL`
+o adresle güncellenip frontend yeniden deploy edilecek (Vite bu değeri
+derleme anında koda gömüyor). Ardından gerçek internet üzerinden uçtan uca
+bir deneme (mikrofon izni, 3 test, analiz) yapılıp bu kayda eklenecek —
+o ana kadar "canlı URL'ler çalışıyor" doğrulanmış sayılmaz.

@@ -12,7 +12,7 @@ python-multipart==0.0.20
 
 # Ses format dönüştürme ve kalite kontrolü (Aşama 3)
 av==18.0.0
-numpy==2.5.1
+numpy==2.4.6
 
 # Pitch/perde analizi (Aşama 4)
 librosa==0.11.0
@@ -20,6 +20,13 @@ librosa==0.11.0
 # ona ihtiyaç duyar (kaldırılırsa pyin çağrıları hata verir) — bu yüzden
 # örtük/geçişli bir bağımlılık değil, açıkça pinlenmiş bir gereksinimdir.
 scipy==1.18.0
+# librosa'nın çalışma zamanı bağımlılığı numba (JIT derleyici) de aynı
+# nedenle açıkça pinlendi (bkz. K-056): numpy sürümüyle numba/llvmlite
+# arasında pip'in kendi kendine bulamadığı bir uyum var — pinlenmezse pip
+# uyumlu bir kombinasyon ararken çok eski (Python 3.12'yi desteklemeyen)
+# bir numba sürümüne kadar geri gidip build'i çökertebiliyor.
+numba==0.66.0
+llvmlite==0.48.0
 
 # Hız sınırlama (Aşama 8: yayına hazırlık, bkz. K-053) — bellek içi sayaç,
 # Redis gerekmez (backend zaten tek process çalışır).

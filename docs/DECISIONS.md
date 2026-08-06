@@ -529,3 +529,31 @@ senkron tutulmasını, README'nin kurulum komutunun güncellenmesini ve
 gerçek maliyeti bu karmaşıklığa değmiyor.
 **Karar:** `requirements.txt` tek dosya olarak kaldı (K-043'teki gibi:
 düşünüldü, gerekçesiyle bilinçli olarak atlandı).
+
+### K-056: `numpy==2.5.1` pini gerçekte kurulu olan sürümle uyuşmuyordu — Render'daki ilk gerçek deploy denemesi bunu ortaya çıkardı
+Kullanıcı README'deki adımları takip edip gerçek bir Render hesabıyla ilk
+canlı deploy'u denedi — bu, projenin ilk kez gerçek bir üçüncü parti
+altyapıda build edilme denemesiydi. Build başarısız oldu. Log incelenince
+kök neden anlaşıldı: `requirements.txt`'te `numpy==2.5.1` yazıyordu, ama
+yerel `.venv`'de (ve tüm otomatik testlerin geçtiği ortamda) gerçekte kurulu
+olan `numpy==2.4.6` idi — muhtemelen `librosa`'nın çalışma zamanı bağımlılığı
+`numba` kurulurken pip'in sessizce farklı bir numpy sürümüne yerleştiği bir
+an oldu ve `requirements.txt` o an güncellenmedi. Yerelde bu fark hiç fark
+edilmedi çünkü `pip install -r requirements.txt` bir daha sıfırdan
+çalıştırılmadı. Render'da pip, `numpy==2.5.1`'i harfiyen kurmaya çalışırken
+ona uyumlu bir `numba` sürümü arayışına girdi; uyumlu, Python 3.12 için
+hazır paketi (wheel) olan bir sürüm bulamayınca eskiye doğru "geri arama"
+yaptı ve sonunda Python 3.12'yi hiç desteklemeyen çok eski bir `numba`
+sürümüne düşüp build'i çökertti.
+**Karar:** `numpy` pini gerçekte test edilen sürüme (`2.4.6`) düzeltildi;
+ayrıca `numba==0.66.0` ve `llvmlite==0.48.0` da (daha önce örtük/geçişli
+bağımlılık olan, ama gerçekte kritik olan `scipy` gibi, bkz. K-043)
+açıkça pinlendi — böylece pip'in bu paketler arasında bir uyum "araması"
+gerekmiyor, doğrudan bilinen çalışan kombinasyonu kuruyor. Düzeltme,
+sıfırdan bir `.venv` ile (Render'ın yapacağı gibi) yerel olarak yeniden
+denenip 55/55 testin geçtiği doğrulandıktan sonra push edildi. **Ders:**
+bir bağımlılık pip tarafından örtük şekilde değiştiğinde (elle
+`pip install` ile ya da başka bir paketin transitive çözümlemesiyle),
+`requirements.txt` hemen `pip freeze` ile karşılaştırılıp güncellenmeli —
+aksi hâlde yerelde çalışan bir kurulum, temiz bir ortamda (CI, PaaS)
+sessizce farklı davranabiliyor.
