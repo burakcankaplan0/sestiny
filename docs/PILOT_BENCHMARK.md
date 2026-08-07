@@ -22,7 +22,7 @@ aynı motor kullanılır. Vokal ayrıştırma (Pilot B) 5 şarkı bitmeden kurul
 | 2 | Erkek pop | Tarkan — Dudu | ✅ Tamamlandı (low ✅ / high ⚠️ needs review) |
 | 3 | Arabesk / güçlü vibrato | Müslüm Gürses — Affet | ✅ Tamamlandı (low ✅ / high ❌ leakage; tessitura ✅) |
 | 4 | Melodik rap / autotune | Poizi — Uyuyamadın Di Mi | ✅ Tamamlandı (low ⚠️ / high ✅; vocal_mode=melodic_rap) |
-| 5 | Rock / yoğun enstrüman | (bekleniyor) | ⬜ |
+| 5 | Rock / yoğun enstrüman | Duman — Her Şeyi Yak | ✅ Tamamlandı (low ❌ bas gitar / high ✅) |
 
 ## Karar kuralı
 
@@ -177,18 +177,87 @@ melodik rap için beklenen. Ama "vokal aralığı"nın anlamı gerçek şarkıc�
 **Direct RMVPE başarılı mı?** ⚠️ **Kısmi** — high doğru, low needs_review,
 tessitura makul; ama parça melodic_rap olduğu için aralığın anlamı sınırlı.
 
-### 5
+### 5. Rock / yoğun enstrüman — Duman / Her Şeyi Yak · ⚠️ Kısmi (low bas gitar leakage)
 
-(bekleniyor)
+| Alan | Değer |
+| --- | --- |
+| Süre | 243.0 sn |
+| Metadata | **VAR** — başlık "Duman - Her Şeyi Yak", sanatçı "Duman" (ID3'ten) |
+| **Full range low** | **D2** (MIDI 38) · 143.01 sn · destek 0.17 sn · median conf 0.516 |
+| **Full range high** | **G4** (MIDI 67) · 50.35 sn · destek 0.20 sn · median conf 0.631 |
+| **Tessitura** | **C3–D4** (14 yarı ton) · geçerli vokalin %76'sı |
+| analysis_confidence | 0.612 |
+| average RMVPE confidence | 0.732 |
+| voiced_frame_ratio | 0.343 |
+| discarded_frame_ratio | 0.657 |
+| octave_jump_ratio | 0.012 (5 şarkının en yükseği) |
+| kabul edilen segment | 364 · toplam geçerli vokal 65.8 sn |
+| needs_review | Hayır (pending) |
+| İşlem süresi | model yükleme 1.30 sn · inference 4.40 sn · toplam 4.48 sn |
+
+**Manuel doğrulama (kullanıcı):**
+- `low_manual_verification = rejected_non_lead_vocal` — ~73–74 Hz temel +
+  148/221/293 Hz düzenli azalan harmonik: güçlü gerçek pitch, ama rock miksinde
+  **bas gitar** (ana vokal değil). median conf 0.516 (eşiğin hemen üstü), D2
+  bas gitar bölgesiyle örtüşüyor.
+- `high_manual_verification = approved` — ~392–401 Hz (G4) + 784/1176/1568 Hz
+  uyumlu harmonik devam. Ana vokal için makul.
+
+**Tessitura C3–D4:** ✅ makul/başarılı.
+
+**Direct RMVPE başarılı mı?** ⚠️ **Kısmi** — high doğru, tessitura doğru, low
+yanlış (bas gitar leakage full range'i aşağı şişirdi).
 
 ---
 
-## Toplu tablo (5 şarkı bitince doldurulacak)
+## Pilot Sonucu (5/5 tamamlandı)
 
-| Şarkı | Low sonucu | Low doğrulama | High sonucu | High doğrulama | Tessitura | Confidence | Direct RMVPE başarılı? |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1. Aleyna Tilki — Sen Olsan Bari | A#3 | ✅ Doğru | C5 | ✅ Doğru | D4–G#4 | 0.652 | ✅ Evet |
-| 2. Tarkan — Dudu | F3 | ✅ Approved | F#5 | ⚠️ Needs review | F#3–F#4 | 0.63 | ⚠️ Kısmi |
-| 3. Müslüm Gürses — Affet | A2 | ✅ Approved | A#5 | ❌ Rejected (non-lead) | G3–D4 | 0.633 | ⚠️ Kısmi |
-| 4. Poizi — Uyuyamadın Di Mi *(melodic_rap)* | F#3 | ⚠️ Needs review | E4 | ✅ Approved | A#3–D4 | 0.79 | ⚠️ Kısmi |
-| 5. | | | | | | | |
+### Toplu tablo — nihai manuel doğrulamalar
+
+| # | Şarkı | Low | Low doğrulama | High | High doğrulama | Tessitura | Conf | Sonuç |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Aleyna Tilki — Sen Olsan Bari | A#3 | ✅ approved | C5 | ✅ approved | D4–G#4 ✅ | 0.652 | ✅ Her iki uç temiz |
+| 2 | Tarkan — Dudu | F3 | ✅ approved | F#5 | ⚠️ needs_review | F#3–F#4 ✅ | 0.63 | ⚠️ Kısmi |
+| 3 | Müslüm Gürses — Affet | A2 | ✅ approved | A#5 | ❌ rejected (non-lead) | G3–D4 ✅ | 0.633 | ⚠️ Kısmi |
+| 4 | Poizi — Uyuyamadın Di Mi *(melodic_rap)* | F#3 | ⚠️ needs_review | E4 | ✅ approved | A#3–D4 ✅ | 0.79 | ⚠️ Kısmi |
+| 5 | Duman — Her Şeyi Yak | D2 | ❌ rejected (non-lead) | G4 | ✅ approved | C3–D4 ✅ | 0.612 | ⚠️ Kısmi |
+
+### Karar kuralının sonucu
+
+Kural: *5 şarkının en az 4'ünde uç notalar güvenilir ise Direct RMVPE tek başına
+ana pipeline kalır.*
+
+- **Her iki uç da temiz (approved): yalnızca 1/5** (Aleyna Tilki). Eşik (4/5)
+  **karşılanmadı.**
+- **Tessitura: 5/5 makul/başarılı** — melodik rap ve güçlü vibrato dahil.
+- Uçlar tek tek: low 3 approved / 1 needs_review / 1 rejected; high 3 approved /
+  1 needs_review / 1 rejected. Her uç bağımsız olarak ~%60 güvenilir.
+
+### Teknik karar (kullanıcı onaylı yön)
+
+**Direct RMVPE:**
+- Tessitura tahmininde 5/5 makul → öneri için asıl kullandığımız çıktı sağlam.
+- Full-range uçlarında güvenilir değil.
+- **Asıl hata pitch detection değil, source attribution:** full mix içindeki bas
+  gitar / yaylı / backing vocal / efekt / başka melodik kaynak ana vokal
+  sanılabiliyor.
+- Sadece duration/confidence eşiğini artırmak bunu tam çözmez; bazı yanlış
+  kaynaklar (Müslüm A#5, Duman D2) uzun süreli, gerçek ve yüksek güvenli pitch
+  üretiyor.
+
+**Önerilen mimari — adaptif iki aşama:**
+- **Stage A (her şarkı):** Direct RMVPE → nota segmentasyonu → tessitura →
+  aday full-range uçları → güven/risk değerlendirmesi.
+- **Stage B (yalnızca gerektiğinde):** şüpheli uç veya düşük source-confidence
+  varsa → vocal separation → separated lead-vocal RMVPE → aday uç doğrulama.
+
+Amaç her şarkıya separation çalıştırmak DEĞİL. Şüphe tetikleyicileri (aday):
+düşük RMVPE confidence, çok kısa uç, sıra dışı geniş full range, uç'un
+tessitura'dan aşırı uzak olması, intro/outro'da olması, rock/arabesk gibi
+yüksek leakage riskli miks, Direct ve separated sonuçlarının uyuşmaması.
+
+**Bu pilot sonrası:** eşikler DEĞİŞMEDİ, pilot şarkıları production kataloğuna
+EKLENMEDİ, production'a ağır bağımlılık EKLENMEDİ. Pipeline B için önce yalnızca
+teknik plan hazırlanacak (bkz. docs/DECISIONS.md K-070); model kurulmayacak.
+
+*(Nihai toplu tablo yukarıda "Pilot Sonucu" bölümündedir.)*

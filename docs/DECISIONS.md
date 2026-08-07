@@ -793,3 +793,37 @@ ve açıklamalı; yöntem `docs/ANALYSIS_THRESHOLDS.md`'de. 9 sentetik test
 (sabit nota, çok-nota, spike reddi, kısa-yüksek-nota reddi, glide, sessizlik,
 ad-lib tessitura'yı genişletmiyor, debug şekli) + 1 RMVPE entegrasyon testi
 (lab venv'de gerçek model) motoru doğruluyor.
+
+### K-070: 5 şarkılık pilot sonucu — Direct RMVPE tessitura'da güvenilir, uçlarda değil → adaptif iki-aşamalı mimari
+5 farklı Türkçe vokal tipinde (kadın pop, erkek pop, arabesk/vibrato,
+melodik rap/autotune, rock) Direct RMVPE (ayrıştırmasız) mevcut eşiklerle
+test edildi; her uç kullanıcı tarafından spektral incelemeyle manuel
+doğrulandı (ayrıntı: `docs/PILOT_BENCHMARK.md`).
+**Sonuç:**
+- **Tessitura: 5/5 makul/başarılı** — güçlü vibrato ve autotune dahil.
+  Öneri sistemi asıl bunu kullandığı için bu güçlü bir olumlu sonuç.
+- **Full-range uçları: her iki uç da temiz yalnızca 1/5** (karar kuralı 4/5
+  idi → karşılanmadı). Hatalı uçlar: Tarkan F#5 (needs_review), Müslüm A#5
+  (bas/backing/efekt — rejected), Poizi F#3 (needs_review), Duman D2 (bas
+  gitar — rejected).
+- **Kök neden pitch detection değil, source attribution:** RMVPE ~925 Hz
+  (Müslüm) veya ~73 Hz (Duman) gibi gerçek, güçlü, yüksek güvenli pitch'leri
+  doğru buluyor — ama full mix'te bunların ana vokal mi yoksa enstrüman/
+  backing/efekt mi olduğunu ayıramıyor. **Sadece duration/confidence eşiği
+  artırmak çözmez**, çünkü bazı yanlış kaynaklar uzun süreli ve yüksek
+  güvenli. Eşikler bu pilotta bilinçli olarak değiştirilmedi.
+**Karar — adaptif iki aşama (her şarkıya ayrıştırma ÇALIŞTIRMADAN):**
+- **Stage A (her şarkı):** Direct RMVPE → nota segmentasyonu → tessitura →
+  aday full-range uçları → güven/risk değerlendirmesi.
+- **Stage B (yalnızca şüpheli uç varsa):** vocal separation → separated
+  lead-vocal RMVPE → aday uç doğrulama. Direct ve separated uyuşuyorsa uç
+  kabul; uyuşmuyorsa needs_review.
+- **Şüphe tetikleyicileri (aday):** düşük RMVPE confidence, çok kısa uç,
+  sıra dışı geniş full range, uç'un tessitura'dan aşırı uzak olması,
+  intro/outro konumu, rock/arabesk gibi yüksek-leakage miks.
+Ayrıca kullanıcı kuralı: **yüksek voiced_frame_ratio veya yüksek RMVPE
+confidence, tek başına autotune/melodic_rap sınıflandırma kuralı olarak
+KULLANILMAYACAK** (Poizi'de ikisi de yüksekti ama bu ilişki doğrulanmadı).
+Pilot şarkıları production kataloğuna eklenmedi; production'a ağır bağımlılık
+eklenmedi. Pipeline B için önce yalnızca teknik plan hazırlanıyor (model
+kurulmadan).

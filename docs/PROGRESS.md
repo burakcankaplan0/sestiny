@@ -1181,3 +1181,21 @@ kurulmaz. Plan ve toplu tablo: `docs/PILOT_BENCHMARK.md`.
 etiket eklendi. `octave_jump_ratio` rapora ve `AnalysisResult`'a taşındı.
 
 Bu noktada durulup 2. şarkının (erkek pop) dosya yolu bekleniyor.
+
+---
+
+## Song Ingestion Lab — 5 Şarkılık Pilot tamamlandı · 2026-08-07
+
+5 farklı Türkçe vokal tipi Direct RMVPE ile (mevcut eşikler, ayrıştırmasız)
+analiz edildi, her uç kullanıcı tarafından manuel doğrulandı (ayrıntı:
+`docs/PILOT_BENCHMARK.md`, karar: K-070).
+
+**Sonuç:** Tessitura 5/5 makul; full-range uçları yalnızca 1/5 tam temiz
+(karar kuralı 4/5 idi). Kök neden source attribution — Direct RMVPE full
+mix'te ana vokali enstrüman/backing/efektten ayıramıyor (Müslüm A#5 backing,
+Duman D2 bas gitar vb.). Karar: **adaptif iki aşama** — Stage A her şarkı
+(Direct), Stage B yalnızca şüpheli uçta (vocal separation + doğrulama).
+
+Eşikler değiştirilmedi, pilot şarkıları kataloğa eklenmedi, production'a
+ağır bağımlılık eklenmedi. Sıradaki: Pipeline B için **yalnızca teknik plan**
+(model kurulmadan), kullanıcı onayı bekleniyor.
