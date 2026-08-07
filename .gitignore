@@ -40,6 +40,10 @@ uploads/
 # Makineye özel araç ayarları (dosya diskte kalır, sadece Git'e girmez)
 .claude/settings.local.json
 
+# Song Ingestion Lab — yerel katalog (üretilen veri, Git'e girmez;
+# yalnızca export edilen production JSON depoya işlenir)
+tools/song_ingestion/catalog.db
+
 # İşletim sistemi / editör
 .DS_Store
 Thumbs.db

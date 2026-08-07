@@ -239,6 +239,44 @@ class TestFreeTransposition:
             assert "CC BY-NC-SA" in song.source_note, f"{song.title}: lisans bilgisi eksik"
 
 
+class TestTessitura:
+    """Tessitura önceliği (K-064) — öneri, sesin çoğunlukla gezdiği bölgeyi önemser."""
+
+    def test_no_tessitura_behaves_like_full_range(self):
+        """Tessitura None ise skor, mevcut full-range mantığıyla birebir aynı olmalı."""
+        song = _song(min_midi=60, max_midi=72)
+        assert score_song(song, 60, 72).match_score == 100
+
+    def test_tessitura_fit_scores_high_despite_extreme_full_range(self):
+        """Uçları kullanıcı aralığını aşsa da tessitura tam oturuyorsa şarkı yüksek skor alır.
+
+        Kullanıcı 55-67; şarkının tessitura'sı 57-65 (tam içeride) ama full range
+        50-79 (uçlar dışarıda). Tessitura önceliği sayesinde şarkı elenmemeli.
+        """
+        song = _song(min_midi=50, max_midi=79, tessitura_low_midi=57, tessitura_high_midi=65)
+        result = score_song(song, 55, 67)
+        # Tessitura tam oturuyor; yalnızca full range'in taşan kısmı hafif ceza alır.
+        assert result.match_score >= 70
+
+    def test_tessitura_outside_range_scores_low(self):
+        """Tessitura kullanıcı aralığının dışındaysa, full range örtüşse bile skor düşük olmalı."""
+        song = _song(min_midi=48, max_midi=84, tessitura_low_midi=76, tessitura_high_midi=82)
+        result = score_song(song, 55, 67)
+        assert result.match_score < 60
+
+    def test_tessitura_fit_beats_full_range_only_fit(self):
+        """İki şarkı: biri tessitura'sı oturan, diğeri tessitura'sı kullanıcıdan geniş. İlki üstte olmalı."""
+        good = _song(id="good", min_midi=52, max_midi=79, tessitura_low_midi=58, tessitura_high_midi=64)
+        edge = _song(id="edge", min_midi=55, max_midi=67, tessitura_low_midi=55, tessitura_high_midi=67)
+        good_score = score_song(good, 58, 64).match_score
+        edge_score = score_song(edge, 58, 64).match_score
+        # 'good'ın tessitura'sı (58-64) kullanıcının bölgesine tam oturuyor; uç
+        # notaları tavanlı ikincil cezayla en fazla 15 puan kırar → yüksek kalır.
+        # 'edge'in tessitura'sı (55-67) kullanıcıdan geniş, rahat bölgeyi zorluyor.
+        assert good_score >= 80
+        assert good_score > edge_score
+
+
 class TestDiversityQuota:
     """Çeşitlilik kotası (K-061) — kalabalık bir grup listeyi süpürmemeli."""
 

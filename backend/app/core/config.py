@@ -124,6 +124,18 @@ TRANSPOSITION_MAX_SEMITONES = 3
 # Ton değiştirmeyle de kapatılamayan her kalan taşma yarı tonu, 100 üzerinden
 # eşleşme skorundan bu kadar puan kırar.
 OVERSHOOT_PENALTY_PER_SEMITONE = 8
+# Tessitura verisi olan şarkılarda, şarkının uç notalarının (full range)
+# tessitura'nın ötesinde kullanıcı aralığını aşan kısmı yalnızca hafif bir ceza
+# alır (bkz. K-064). Fikir: sesin çoğunlukla gezdiği bölge (tessitura) rahat
+# oturuyorsa, birkaç ad-lib/tiz uç notasının biraz taşması şarkıyı elemez —
+# sadece küçük bir dezavantaj. Birincil (tessitura) cezasından belirgin düşük.
+FULL_RANGE_SECONDARY_PENALTY_PER_SEMITONE = 3
+# İkincil ceza tavanı: çok geniş full range'li bir şarkı bile en fazla bu kadar
+# puan kaybeder. Böylece full range asla tessitura sinyalini bastıramaz —
+# tessitura'daki 2 yarı tonluk sapma (16 puan) bile her türlü uç-nota
+# taşmasından (en fazla bu tavan) daha ağır basar. "Tessitura'yı full range'den
+# fazla önemse" isteğinin sayısal garantisi budur.
+FULL_RANGE_SECONDARY_MAX_PENALTY = 15
 # Aynı aralık uyumunda daha zor bir şarkı hafifçe geride kalır (CLAUDE.md madde 5,
 # adım 6: "Zorluk seviyesini eşleşme skoruna dahil et").
 DIFFICULTY_SCORE_PENALTY: dict[str, int] = {"kolay": 0, "orta": 5, "zor": 10}

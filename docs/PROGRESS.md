@@ -1057,3 +1057,43 @@ kürasyon.
 
 Modern Türkçe pop kürasyonu ve yabancı havuzun tür listesi sayfalarıyla
 büyütülmesi (bir önceki kayıtta anlatılan yöntem) hâlâ açık işler.
+
+---
+
+## Song Ingestion Lab — Faz 0 (iskelet) · 2026-08-07
+
+Şarkı verisi darboğazını kalıcı çözmek için, ses kaydından offline vokal
+aralığı çıkaran ayrı bir geliştirici aracı planlandı ve iskeleti kuruldu.
+Önce ayrıntılı teknik plan hazırlanıp kullanıcı onayı alındı (2025 ses-ML
+tooling araştırması dahil). Karar detayları: K-064 – K-067.
+
+### Yapılanlar (bu commit, ağır ML KURULMADAN)
+
+**Production (küçük, geriye uyumlu):**
+- `Song`'a `tessitura_low/high_midi` + `vocal_mode` (nullable/varsayılan) —
+  eski 3 JSON dosyası hiç değişmeden yükleniyor.
+- `score_song` tessitura'yı önceler; full range yalnızca tavanlı (15 puan)
+  hafif ikincil ceza (K-064). Tessitura yoksa davranış eskiyle birebir aynı.
+
+**Lab iskeleti (`tools/song_ingestion/`, ayrı venv/bağımlılık):**
+- `models.py` (`LabSong` zengin model), `notes.py`, `catalog.py` (SQLite:
+  resume, review durumu, migrate), `decode.py` (PyAV, lazy), `batch.py`
+  (hata yalıtımı + content-hash resume), `export.py` (onaylı→production JSON).
+- `ingest/` aşama modülleri (separate/pitch/segment/range/confidence/pipeline)
+  — arayüz + sözleşme hazır, gövdeler Faz 1'de dolacak; ağır importlar lazy.
+- `requirements.txt` (ayrı; Faz 1'de kurulacak, backend'e girmez).
+
+### Testler
+
+| Test | Sonuç |
+| --- | --- |
+| Backend (pytest) | ✅ **68/68** (64 + 4 yeni tessitura testi) |
+| Lab (pytest, stdlib) | ✅ **16/16** (katalog CRUD/resume, batch hata yalıtımı+resume, export; export JSON'u production Song ile yükleniyor) |
+
+### Doğrulanamayan / sonraki
+
+Ağır ML (ayrıştırma + pitch modelleri) henüz kurulmadı/denenmedi — **Faz 1**.
+Onu takiben Faz 2 (30-50 yabancı şarkıyla calibration, doğruluk eşiği), Faz 3
+(batch + review arayüzü), Faz 4 (Türkçe pilot), Faz 5 (ölçekleme). Her faz
+sonunda durulup kullanıcı onayı beklenecek. Sınır değişmedi: araç ses dosyası
+edinmez, kullanıcı kendi dosyalarını verir; export insan onayına bağlı.

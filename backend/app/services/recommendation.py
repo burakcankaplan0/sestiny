@@ -17,6 +17,8 @@ from pathlib import Path
 from app.core.config import (
     DIFFICULTY_SCORE_PENALTY,
     FREE_TRANSPOSITION_MAX_SEMITONES,
+    FULL_RANGE_SECONDARY_MAX_PENALTY,
+    FULL_RANGE_SECONDARY_PENALTY_PER_SEMITONE,
     MAX_RECOMMENDATIONS,
     MAX_RECOMMENDATIONS_PER_ARTIST,
     MAX_RECOMMENDATIONS_PER_LANGUAGE,
@@ -53,6 +55,16 @@ class Song:
     # Eserin sabit bir mutlak aralığı yoksa (Türk makam müziği: perde seviyesi
     # icracının seçtiği "ahenk"e göre değişir) serbestçe kaydırılabilir.
     freely_transposable: bool = False
+    # Tessitura: şarkının büyük bölümünde kalınan temel vokal bölge. min/max
+    # (full range) uç notaları içerir (ad-lib, tek bir tiz çığlık); tessitura
+    # ise "sesin çoğunlukla nerede gezdiği". Öneri eşleştirmesi tessitura'yı
+    # önceler (bkz. K-064). Yalnızca ses analizinden gelen kayıtlarda dolu olur;
+    # eski kayıtlarda None → full range mantığına düşülür.
+    tessitura_low_midi: int | None = None
+    tessitura_high_midi: int | None = None
+    # Parçanın vokal karakteri (sung / melodic_rap / rap / mixed). Öneri metni
+    # ve ileride filtreleme için. Eski kayıtlar söylenen eserlerdir.
+    vocal_mode: str = "sung"
 
     @property
     def confidence(self) -> float:
@@ -150,10 +162,29 @@ def score_song(song: Song, user_low_midi: int, user_high_midi: int) -> SongRecom
             TRANSPOSITION_MAX_SEMITONES,
             song.optional_transposition_limit if song.optional_transposition_limit is not None else TRANSPOSITION_MAX_SEMITONES,
         )
-    best_shift, best_overshoot = _find_best_shift(song.min_midi, song.max_midi, user_low_midi, user_high_midi, max_shift)
+    # Birincil eşleştirme hedefi: tessitura varsa o (sesin çoğunlukla gezdiği
+    # bölge), yoksa full range. Böylece skor öncelikle "rahat bölge" uyumuyla
+    # belirlenir (bkz. K-064). Tessitura yoksa davranış eskisiyle birebir aynı.
+    if song.tessitura_low_midi is not None and song.tessitura_high_midi is not None:
+        primary_low, primary_high = song.tessitura_low_midi, song.tessitura_high_midi
+    else:
+        primary_low, primary_high = song.min_midi, song.max_midi
+
+    best_shift, best_overshoot = _find_best_shift(primary_low, primary_high, user_low_midi, user_high_midi, max_shift)
 
     score = 100
     score -= best_overshoot * OVERSHOOT_PENALTY_PER_SEMITONE
+
+    # Tessitura kullanıldıysa, full range'in tessitura ötesinde taşan kısmı
+    # (uç/ad-lib notalar) yalnızca hafif ikincil bir ceza alır.
+    if song.tessitura_low_midi is not None and song.tessitura_high_midi is not None:
+        full_overshoot = _overshoot(song.min_midi, song.max_midi, user_low_midi, user_high_midi, best_shift)
+        extra_beyond_tessitura = max(0, full_overshoot - best_overshoot)
+        score -= min(
+            FULL_RANGE_SECONDARY_MAX_PENALTY,
+            extra_beyond_tessitura * FULL_RANGE_SECONDARY_PENALTY_PER_SEMITONE,
+        )
+
     score -= DIFFICULTY_SCORE_PENALTY.get(song.difficulty, 0)
     # Kaynağı daha zayıf olan veri, aynı aralık uyumunda geride kalır — havuza
     # girer ama üst sıraları işgal etmez (bkz. K-059).

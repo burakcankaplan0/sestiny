@@ -686,3 +686,68 @@ harf küçültülür. MusicXML dosyaları eserin sözlerini de içeriyor, ancak
 script yalnızca başlık ve besteci alanlarını okur — sözlere dokunulmaz.
 Aynı şekilde eserin sözlü olup olmadığı, txt dosyasındaki söz sütununun
 **doluluğu** sayılarak belirlenir; içerik hiçbir yere yazılmaz.
+
+---
+
+## Song Ingestion Lab (offline veri üretimi) — 2026-08-07
+
+### K-064: Öneri eşleştirmesi tessitura'yı full range'den önceler (tavanlı ikincil ceza)
+Bir şarkının uç notaları (tek bir tiz çığlık, ad-lib) o şarkının kullanıcıya
+uygunluğunu belirlememeli — asıl önemli olan sesin çoğunlukla gezdiği bölge
+(tessitura). Kullanıcı bunu açıkça istedi: "öneri algoritması tessitura'yı
+full range'den daha fazla önemsesin."
+**Karar:** `Song`'a nullable `tessitura_low_midi`/`tessitura_high_midi` +
+`vocal_mode` eklendi (varsayılan None/"sung" → eski 3 JSON dosyası hiç
+değişmeden yükleniyor, geriye tam uyum). `score_song` tessitura varsa
+eşleştirmeyi **birincil olarak tessitura üzerinden** yapar; full range'in
+tessitura ötesinde taşan kısmı yalnızca **tavanlı** (`FULL_RANGE_SECONDARY_MAX_PENALTY = 15`)
+hafif bir ikincil ceza alır. Tavan kritik: aksi hâlde çok geniş full range'li
+bir şarkının uç cezası tessitura sinyalini bastırıyordu (test bunu yakaladı,
+başlangıç tasarımı düzeltildi). Böylece tessitura'daki 2 yarı tonluk sapma
+(16 puan) her türlü uç-nota taşmasından (en fazla 15) daha ağır basar —
+"tessitura'yı fazla önemse" isteğinin sayısal garantisi. Tessitura yoksa
+davranış eskisiyle birebir aynı (68 test bunu doğruluyor).
+
+### K-065: Şarkı verisi üretimi ayrı, yalnızca-geliştirici bir araca taşındı (`tools/song_ingestion/`)
+Modern Türkçe pop için yayınlanmış vokal aralığı kaynağı yok; tek gerçekçi
+çözüm orijinal ses kaydından offline analiz. Ama ağır ses-ML yığını (torch,
+onnx, demucs, roformer, rmvpe) production backend'ine girerse Render build'i
+şişer ve canlı uygulama kırılganlaşır (K-056 dersi).
+**Karar:** Ayrı paket `tools/song_ingestion/`, **kendi venv'i, kendi
+requirements'ı** — bu bağımlılıklar `backend/requirements.txt`'e HİÇ girmez.
+Araç yalnızca geliştiricinin Mac'inde, yeni şarkı eklenirken çalışır.
+Production yalnızca aracın export ettiği, insan-doğrulamalı JSON'u okur
+(mevcut `load_songs()` akışı). Ağır aşama modülleri (separate/pitch)
+bağımlılıklarını **fonksiyon içinde** import eder; böylece paket, ağır
+modeller kurulmadan da import edilip test edilebilir. Faz 0'da (bu commit)
+yalnızca standart-kütüphane iskelet kuruldu ve test edildi (16 test):
+`LabSong` + SQLite katalog (resume/review durumu), decode (PyAV, lazy),
+batch orkestrasyonu (hata yalıtımı + content-hash ile resume), export
+projeksiyonu. Ağır ML Faz 1'de kurulacak.
+
+### K-066: Model seçimi Mac gerçeğine göre — torch MPS'ten kaçın, CoreML/ONNX tercih et
+Araştırma (2025) net bir Mac tuzağı gösterdi: PyTorch'un MPS backend'i bu
+ses modellerinde güvenilmez (karmaşık-tensör/özel-op boşlukları).
+**Karar (varsayılanlar, `separate.py`/`pitch.py`'de seçilebilir):**
+- Vokal ayrıştırma: **Mel-Band RoFormer** (python-audio-separator, CoreML) —
+  en temiz, en az sızıntı → en az sahte pitch. Yedek: **HTDemucs `htdemucs_ft`**
+  (Meta, MIT lisans, sağlam).
+- Pitch: **RMVPE** (`rmvpe-onnx`, torch'a girmez) — eşlik/sızıntı varken bile
+  F0'ı doğru okumak için tasarlanmış, frame başına güven verir. Yedek: FCPE /
+  torchcrepe; `pyin` yalnızca temiz frame çapraz kontrolü.
+- Model ağırlıklarının çoğu araştırma/NC lisanslı — kullanıcı Sestiny'nin
+  ücretsiz kalacağını teyit etti, sorun yok; ticarileşirse checkpoint başına
+  kontrol şartı `separate.py`'de not edildi.
+
+### K-067: `source_type` ≠ `confidence`; güven ölçülür, sabit atanmaz; export insan onayına bağlı
+Kullanıcının katı isteği: "MIDI = 0.9, Audio = 0.7 gibi keyfi güven verme."
+**Karar:** Lab modelinde `source_type` (verinin nereden geldiği) ile
+`analysis_confidence` (0-1) **ayrı alanlar**. Güven, Faz 1'de gerçekten
+ölçülen sinyal kalitesinden türetilecek (nitelikli frame oranı, uç notaları
+destekleyen tutarlı tahmin, ayrıştırma sonrası kalıntı sızıntı, sung-segment
+oranı) — `confidence.py`'nin girdi sözleşmesi bunu şart koşuyor.
+"audio_analysis + confidence 0.93 + human_verified true" mümkün. Ayrıca hiçbir
+kayıt `review_status=approved` VE `human_verified=true` olmadan production'a
+export edilmez (`export.py`) — dürüstlük kapısı budur. Rap/spoken bir parçada
+güvenilir melodik aralık bulunamazsa sayı üretilmez, `vocal_mode=rap`,
+`needs_review` (plan Q3-bis).

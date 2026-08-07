@@ -1,0 +1,33 @@
+# Sestiny Song Ingestion Lab — AYRI bağımlılıklar (backend'inkinden bağımsız).
+# Bunlar YALNIZCA bu araç için, yalnızca geliştiricinin Mac'inde kurulur.
+# Sestiny production backend'i (Render) bu paketlerin HİÇBİRİNİ kurmaz.
+#
+# Faz 0 (iskelet) bunların hiçbirini GEREKTİRMEZ — models/notes/catalog/batch
+# yalnızca standart kütüphaneyle çalışır. Aşağıdakiler Faz 1'de (pipeline)
+# kurulur. Sürümler, kurulum anında çalışan sürümle birebir pinlenecektir
+# (K-056 dersi: yerel kurulum ile requirements sürümleri ayrışmasın).
+#
+# --- Ses çözme ---
+# av                      # PyAV — backend ile aynı; ses dosyalarını diziye çevirir
+#
+# --- Vokal ayrıştırma (Mac: ONNX Runtime / CoreML tercih; torch MPS'ten kaçın) ---
+# audio-separator[cpu]    # Mel-Band RoFormer / MDX çalıştırır, CoreML EP
+# demucs                  # HTDemucs (MIT) — yedek/çapraz kontrol
+#
+# --- Pitch (F0) çıkarımı ---
+# rmvpe-onnx              # RMVPE, ONNX Runtime (torch'a girmez) — varsayılan
+# torchcrepe              # yedek (torch tabanlı)
+# librosa                 # pyin — temiz frame'lerde çapraz kontrol
+#
+# --- MIDI (yardımcı doğrulama kaynağı) ---
+# mido                    # backend ile aynı
+#
+# --- Review arayüzü ---
+# fastapi
+# uvicorn[standard]
+#
+# --- Metadata ---
+# mutagen                 # ID3 vb. etiketlerden şarkı adı/sanatçı okuma
+#
+# --- Test ---
+# pytest
