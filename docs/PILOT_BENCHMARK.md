@@ -20,7 +20,7 @@ aynı motor kullanılır. Vokal ayrıştırma (Pilot B) 5 şarkı bitmeden kurul
 | --- | --- | --- | --- |
 | 1 | Kadın pop | Aleyna Tilki — Sen Olsan Bari | ✅ Tamamlandı (low ✅ / high ✅) |
 | 2 | Erkek pop | Tarkan — Dudu | ✅ Tamamlandı (low ✅ / high ⚠️ needs review) |
-| 3 | Arabesk / güçlü vibrato | (bekleniyor) | ⬜ |
+| 3 | Arabesk / güçlü vibrato | Müslüm Gürses — Affet | ✅ Tamamlandı (low ✅ / high ❌ leakage; tessitura ✅) |
 | 4 | Melodik rap / autotune | (bekleniyor) | ⬜ |
 | 5 | Rock / yoğun enstrüman | (bekleniyor) | ⬜ |
 
@@ -99,7 +99,47 @@ değiştirilmeyecek.
 
 **Direct RMVPE başarılı mı?** ⚠️ **Kısmi** — low güvenilir, high doğrulanamadı.
 
-### 3-5
+### 3. Arabesk / güçlü vibrato — Müslüm Gürses / Affet · ⚠️ Kısmi (tessitura doğru, high leakage)
+
+| Alan | Değer |
+| --- | --- |
+| Süre | 275.6 sn |
+| Metadata | yok (ID3 boş) — tahmin edilmedi |
+| **Full range low** | **A2** (MIDI 45) · 173.87 sn · destek 0.26 sn · median conf 0.697 |
+| **Full range high** | **A#5** (MIDI 82) · 231.64 sn · destek 0.43 sn · median conf 0.649 |
+| **Tessitura** | **G3–D4** (7 yarı ton) · geçerli vokalin %82'si |
+| analysis_confidence | 0.633 |
+| average RMVPE confidence | 0.769 |
+| voiced_frame_ratio | 0.357 |
+| discarded_frame_ratio | 0.643 |
+| octave_jump_ratio | 0.0003 |
+| kabul edilen segment | 522 · toplam geçerli vokal 74.2 sn |
+| needs_review | Hayır (pending) |
+| İşlem süresi | model yükleme 1.28 sn · inference 4.94 sn · toplam 5.04 sn |
+
+**Manuel doğrulama (kullanıcı):**
+- `low_manual_verification = approved` — A2 (~110 Hz temel + 220/330/440 Hz
+  uyumlu harmonik yapı). Gerçek vokal olarak kabul edilebilir.
+- `high_manual_verification = rejected_non_lead_vocal` — RMVPE yanlış pitch
+  UYDURMADI: ~920–930 Hz'de gerçekten güçlü, A#5 ile uyumlu bir perdeli kaynak
+  var. Ama spektral incelemede bu bölgenin ana vokal olduğuna dair yeterli
+  harmonik yapı yok (enerji ~925 Hz'deki tek bileşende yoğun, üst harmonikler
+  ana vokal için beklenenden zayıf). Kaynak muhtemelen enstrüman/efekt/backing
+  vocal. **Full range'i yanlış genişleten bir leakage.**
+
+**Not edilen bulgu:** *Direct RMVPE, pitch tespitinde doğru olabilse de full
+mix üzerinde pitch kaynağının ana vokal olup olmadığını ayıramıyor. Özellikle
+tiz uçlarda enstrüman/backing vocal leakage full range'i yanlış genişletebiliyor.*
+(2. şarkıdaki desenin daha kesin biçimi — bu kez "şüpheli" değil, "ana vokal
+değil" olarak reddedildi.)
+
+**Tessitura G3–D4:** ✅ makul/başarılı — güçlü vibratoya rağmen segmentasyon
+çökmedi (octave_jump 0.0003), pes erkek arabesk merkezi doğru, vokalin %82'si.
+
+**Direct RMVPE başarılı mı?** ⚠️ **Kısmi** — tessitura doğru, low doğru, high
+yanlış (leakage full range'i şişirdi).
+
+### 4-5
 
 (bekleniyor)
 
@@ -111,6 +151,6 @@ değiştirilmeyecek.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1. Aleyna Tilki — Sen Olsan Bari | A#3 | ✅ Doğru | C5 | ✅ Doğru | D4–G#4 | 0.652 | ✅ Evet |
 | 2. Tarkan — Dudu | F3 | ✅ Approved | F#5 | ⚠️ Needs review | F#3–F#4 | 0.63 | ⚠️ Kısmi |
-| 3. | | | | | | | |
+| 3. Müslüm Gürses — Affet | A2 | ✅ Approved | A#5 | ❌ Rejected (non-lead) | G3–D4 | 0.633 | ⚠️ Kısmi |
 | 4. | | | | | | | |
 | 5. | | | | | | | |
