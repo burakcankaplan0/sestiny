@@ -275,6 +275,7 @@ def _recommendation_schema(item: RecommendationResult) -> SongRecommendation:
         transposition_semitones=item.transposition_semitones,
         verified=song.verified,
         source_note=song.source_note,
+        freely_transposable=song.freely_transposable,
     )
 
 

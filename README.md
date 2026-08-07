@@ -11,8 +11,9 @@ bu profile uygun şarkılar önermeyi hedefleyen, web tabanlı bir uygulamadır.
 
 ✅ **Aşama 7 (Kalite, test, dokümantasyon) tamamlandı**, ardından gerçek şarkı
 verisi eklendi. Uçtan uca akış çalışıyor: kayıt yap → analiz et → tahmini ses
-profilini ve sana uygun şarkı önerilerini gör — artık 12 demo kaydın yanında
-16 gerçek, kaynaklı şarkı da (`singingcarrots.com`'dan) öneriliyor.
+profilini ve sana uygun şarkı önerilerini gör. Öneri havuzu **1654 şarkı**:
+1586 Türkçe eser (SymbTr makam müziği veri seti), 56 yabancı şarkı
+(`singingcarrots.com`), 12 demo kayıt (yalnızca son çare).
 
 ✅ **Aşama 8 (Yayına hazırlık) tamamlandı — uygulama gerçekten canlıda.**
 Frontend: **https://sestiny.vercel.app** · Backend: `https://sestiny-backend.onrender.com`
@@ -176,11 +177,19 @@ sırasında (HTTPS üzerinden) seçilen hosting sağlayıcısının (Render) sun
   algılama); kod bunu büyük ölçüde filtreler ama tamamen ortadan kaldırmaz.
 - Stabilite skoru ve tahmini profil kategorileri (K-013, bölüm 13/4) **klinik
   veya bilimsel bir standarda dayanmaz** — deneyimsel başlangıç eşikleridir.
-- Şarkı önerileri 12 demo kayıt ("Demo Şarkı 1", "Demo Şarkı 2"...) ve
-  `singingcarrots.com` kaynaklı 16 gerçek şarkıdan (`verified: true`, her
-  birinin kaynağı `source_note` alanında) oluşan küçük bir havuzdan geliyor —
-  kapsamlı bir müzik kütüphanesi değil. **Türkçe gerçek şarkı yok**: kullanılan
-  kaynakta Türkçe şarkı verisi bulunamadı, uydurma bir liste oluşturulmadı.
+- Şarkı havuzunun her kaydının nota aralığı bir dış kaynaktan gelir
+  (`source_note` alanında belirtilir); hiçbir değer tahminle yazılmamıştır.
+  Yine de bunlar yaklaşık değerlerdir ve icraya göre değişir.
+- **Türkçe tarafta modern pop yok.** Havuzdaki 1586 Türkçe eser, SymbTr
+  veri setinden gelen Türk sanat müziği ve türkü repertuvarıdır. Modern
+  Türkçe pop için (Tarkan, Ceylan vb.) yayınlanmış bir vokal aralığı
+  kaynağı bulunamadı; uydurma veri eklenmedi.
+- **Türk makam eserlerinin mutlak aralığı bir referanstır, kesin değildir.**
+  Bu müzikte perde seviyesini ("ahenk") icracı kendi sesine göre seçer;
+  eserin sabit bir tonu yoktur. Uygulama bu eserleri serbest transpoze
+  edilebilir sayar ve sayısal bir ton önerisi göstermez.
+- Havuzdaki 12 "Demo Şarkı" kaydı kurgudur; yalnızca daha iyi bir gerçek
+  alternatif bulunamazsa gösterilir ve "Demo veri" rozetiyle işaretlenir.
 - Uygulama yalnızca güncel Chrome/Edge/Safari gibi `MediaRecorder` ve
   `getUserMedia` destekleyen tarayıcılarda çalışır; eski tarayıcılarda anlaşılır
   bir "desteklenmiyor" mesajı gösterilir ama kayıt yapılamaz.

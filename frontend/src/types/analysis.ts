@@ -66,6 +66,9 @@ export interface SongRecommendation {
   transposition_semitones: number | null;
   verified: boolean;
   source_note: string;
+  /** Türk makam müziğinde eserin sabit bir mutlak perdesi yoktur; icracı kendi sesine
+   *  uygun ahengi seçer. Bu eserlerde sayısal yarı ton önerisi gösterilmez. */
+  freely_transposable: boolean;
 }
 
 export interface AnalyzeSessionResponse {

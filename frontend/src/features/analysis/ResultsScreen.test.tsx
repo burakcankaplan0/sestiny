@@ -31,6 +31,7 @@ function makeRecommendation(overrides: Partial<SongRecommendation> = {}): SongRe
     transposition_semitones: null,
     verified: false,
     source_note: "Demo veri — gerçek bir şarkı değildir.",
+    freely_transposable: false,
     ...overrides,
   };
 }
@@ -214,6 +215,20 @@ describe("ResultsScreen — şarkı önerileri", () => {
     );
 
     expect(screen.getByText(texts.recommendations.transposeUp(3))).toBeVisible();
+  });
+
+  it("serbest transpoze edilebilen eserde sayısal yarı ton yerine açıklama gösterir", () => {
+    // Makam müziğinde hesaplanan kaydırma 20-30 yarı tona çıkabiliyor; kullanıcıya
+    // bu sayıyı göstermek anlamsız olurdu (bkz. K-060).
+    const recommendations = [
+      makeRecommendation({ freely_transposable: true, transposition_semitones: -29 }),
+    ];
+    render(
+      <ResultsScreen result={baseResult({ recommendations })} onRestart={vi.fn()} onBackToReview={vi.fn()} />,
+    );
+
+    expect(screen.getByText(texts.recommendations.singableInAnyKey)).toBeVisible();
+    expect(screen.queryByText(/29 semiton/)).not.toBeInTheDocument();
   });
 
   it("zorluk filtresi yalnızca seçilen zorluktaki şarkıları gösterir", async () => {

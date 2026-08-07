@@ -130,6 +130,44 @@ DIFFICULTY_SCORE_PENALTY: dict[str, int] = {"kolay": 0, "orta": 5, "zor": 10}
 # CLAUDE.md: "En uygun 5-10 sonucu sırala."
 MAX_RECOMMENDATIONS = 10
 
+# ---------- Şarkı verisi kaynak katmanları (bkz. K-059) ----------
+# Her şarkının nota aralığı farklı güvenilirlikte kaynaklardan geliyor. Katman,
+# verinin nereden geldiğini; confidence ise buna karşılık gelen güveni belirtir.
+# Skor bu güvenle ağırlıklandırılır — düşük güvenli veri havuza girebilir ama
+# üst sıraları işgal edemez.
+SOURCE_TIER_PUBLISHED_RANGE = 1  # yayınlanmış vokal aralığı veritabanı (singingcarrots)
+SOURCE_TIER_MACHINE_READABLE_SCORE = 2  # makine okunur nota verisi (SymbTr MIDI)
+SOURCE_TIER_MEASURED = 3  # izole vokalden ölçüm
+SOURCE_TIER_REPORTED_BY_EAR = 4  # kulakla bildirim
+# Demo veri kurgudur (bkz. K-042); havuzda gerçek şarkı varken kullanıcıya
+# gösterilmesinin bir değeri yok. En düşük güvenle son çare olarak kalır —
+# algoritmanın veri yokken de çalıştığını gösterdiği için silinmiyor (K-049).
+SOURCE_TIER_DEMO = 5
+
+SOURCE_TIER_CONFIDENCE: dict[int, float] = {
+    SOURCE_TIER_PUBLISHED_RANGE: 1.0,
+    SOURCE_TIER_MACHINE_READABLE_SCORE: 0.9,
+    SOURCE_TIER_MEASURED: 0.7,
+    SOURCE_TIER_REPORTED_BY_EAR: 0.4,
+    SOURCE_TIER_DEMO: 0.2,
+}
+
+# Serbest transpoze edilebilen eserler (Türk makam müziği) için kaydırma sınırı.
+# Makam müziğinde eserin sabit bir mutlak aralığı yoktur; icracı kendi sesine
+# uygun "ahenk"i (perde seviyesini) seçer. Bu yüzden notasyondaki mutlak yerleşim
+# değil, yalnızca aralık genişliği anlamlıdır (bkz. K-060).
+# Sınır 3 oktav: SymbTr notasyonu teorik bir referans perdeden yazıldığı için
+# (medyan merkez ~D5) pes bir ses için gereken kaydırma 24 yarı tonu aşabiliyor;
+# bir oktav yetersiz kalıyordu. 36, her insan sesini kapsamaya fazlasıyla yeter.
+FREE_TRANSPOSITION_MAX_SEMITONES = 36
+
+# ---------- Öneri çeşitliliği (bkz. K-061) ----------
+# Havuzda bir dilin/kaynağın eser sayısı diğerlerini çok aşabiliyor (ör. 1587
+# makam eseri, 56 yabancı şarkı). Kota olmadan kalabalık grup tüm listeyi
+# süpürür ve kullanıcı tek tip öneri görür.
+MAX_RECOMMENDATIONS_PER_LANGUAGE = 6
+MAX_RECOMMENDATIONS_PER_ARTIST = 2
+
 # ---------- Hız sınırlama (Aşama 8: yayına hazırlık, bkz. K-053) ----------
 # CPU-yoğun analiz uç noktası (librosa pitch analizi) herkese açık internete
 # çıktığında IP başına bu sıklıkla sınırlanır. Format, slowapi/limits

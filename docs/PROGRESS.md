@@ -970,3 +970,90 @@ edecek. Kullanıcı isterse canlı sitede yeni şarkıların göründüğünü
 doğrulayabilir. "1000+" hedefine ulaşmak için bu tarzda birden fazla
 oturum daha gerekecek — bugünkü tur, yöntemin ölçeklenebilir olduğunu
 gösterdi (32 denemede %84 başarı oranı).
+
+---
+
+## Türkçe Şarkı Havuzu — SymbTr Aktarımı · 2026-08-07
+
+Kullanıcı Türkçe şarkı istedi ve "1000+" hedefi koydu. Türkçe için hiçbir
+vokal aralığı veritabanı bulunamamıştı (iki ayrı oturumda arandı). Bu
+oturumda çözüm bulundu ve uygulandı.
+
+### Aranan ve elenen kaynaklar
+
+| Kaynak | Sonuç |
+| --- | --- |
+| singingcarrots.com | Türkçe sıfır (üçüncü kez doğrulandı) |
+| notanehri, kolaynota | Oktav bilgisi yok, bağlama için kaydırmalı — kullanılamaz |
+| TRT Nota Arşivi | Login gerektiriyor, erişilemiyor |
+| notaarsivleri.com | Açık ve büyük, ama notalar **taranmış JPEG** (PDF içinde) — göz kararı okuma gerektirir, güvenilmez |
+| MuseScore | 403, otomatik erişim engelli |
+| turkcemidi.com | Ücretli (179₺/şarkı) |
+| Türkçe MIDI arşivleri | Bulunanlar ölü sunucular |
+| **SymbTr (MTG/UPF)** | ✅ **Çözüm** |
+
+Kullanıcının önerdiği "telifli ses dosyalarını indirip analiz et" yolu
+K-058'de reddedilmişti; bu oturumda da aynı konumda kalındı.
+
+### SymbTr aktarımı
+
+[github.com/MTG/SymbTr](https://github.com/MTG/SymbTr) — Barcelona Universitat
+Pompeu Fabra'nın Türk makam müziği veri seti: 2200 eser, MIDI + MusicXML +
+txt, CC BY-NC-SA 4.0. Kullanıcı projenin ücretsiz kalacağını teyit etti,
+NonCommercial kısıtı sorun değil.
+
+`backend/scripts/import_symbtr.py` yazıldı (uygulamanın çalışma zamanının
+parçası değil, tek seferlik veri hazırlama aracı):
+- Dinî formlar elendi (kullanıcı isteği: "ilahi olmasın")
+- Enstrümantal eserler elendi — form adına güvenmek yerine txt'deki söz
+  sütununun doluluğuna bakılarak (içerik okunmadan, yalnızca sayılarak)
+- `mido` ile min/max nota çıkarıldı
+- Başlık ve besteci MusicXML'den okundu (dosya adları Türkçe karakter
+  kaybediyor, bkz. K-063)
+- **Sonuç: 1586 sözlü, dindışı Türkçe eser** — 841 şarkı, 281 türkü,
+  120 küpe, semai/beste/fantezi ve diğerleri
+
+### Çözülen üç gerçek sorun
+
+1. **Mutlak perde sorunu (K-060):** Ham aralıklar medyan G4–C6 çıktı —
+   makam müziğinde perde seviyesini icracı seçtiği için notasyon bir
+   referans. Sabit bir düzeltme uydurmak yerine eserler "serbest transpoze
+   edilebilir" olarak modellendi.
+2. **Çeşitlilik çöküşü (K-061):** 1586 eser tüm önerileri süpürüyordu.
+   Dil (6) ve sanatçı (2) kotası eklendi.
+3. **Demo şarkılar (K-062):** Uydurma "Demo Şarkı" kayıtları üst sıraları
+   işgal ediyor ve Türkçe kotasını dolduruyordu — en düşük katmana indirildi.
+
+### Testler
+
+| Test | Sonuç |
+| --- | --- |
+| Backend (pytest) | ✅ **64/64** (55 mevcut + 9 yeni: güven ağırlığı, serbest transpoze, çeşitlilik kotası, SymbTr atfı) |
+| Frontend (Vitest) | ✅ **35/35** (1 yeni: serbest transpoze eserde sayı yerine açıklama) |
+| Tip kontrolü, lint | ✅ temiz |
+
+### Uçtan uca doğrulama
+
+Yerel sunucuya sentetik bir kayıtla (G2–E4 kaydırma) istek atıldı:
+tahmini rahat bölge A2–D#4 çıktı, öneriler **6 yabancı + 4 Türkçe**
+karışımı geldi, Türkçe eserlerde sayısal yarı ton yerine "serbest perde"
+ifadesi göründü. Demo şarkı hiç çıkmadı.
+
+### Durum: havuz 68 → 1654 şarkı
+
+| Grup | Adet |
+| --- | --- |
+| Türkçe (SymbTr) | 1586 |
+| Yabancı (singingcarrots) | 56 |
+| Demo (son çare) | 12 |
+
+**"1000+" hedefi tutmuş oldu**, ama içeriğin dürüst tarifi şu: Türkçe
+tarafı Türk sanat müziği ve türkü repertuvarı — **modern Türkçe pop yok**
+(Tarkan, Ceylan, Aleyna Tilki gibi). O boşluk için sıfır-katılımlı bir
+kaynak bulunamadı; gerçekçi yol MuseScore/kulak yoluyla 50-150 şarkılık
+kürasyon.
+
+### Sonraki adım
+
+Modern Türkçe pop kürasyonu ve yabancı havuzun tür listesi sayfalarıyla
+büyütülmesi (bir önceki kayıtta anlatılan yöntem) hâlâ açık işler.

@@ -613,3 +613,76 @@ sayfaları da denendi (ör. `/vocal-range/C3-C5`) ama bunlar çoğunlukla az
 tanınan kilise/ilahi şarkıları çıkardı — kullanıcının istediği "yüksek
 popülerlik" kriterine uymadığı için o sonuçlar kullanılmadı, yalnızca
 tek tek doğrulanan tanınmış hit şarkılar eklendi.
+
+---
+
+## Türkçe şarkı havuzu — SymbTr aktarımı — 2026-08-07
+
+### K-059: Şarkı verisine kaynak katmanı (`source_tier`) ve güven ağırlığı eklendi
+Havuz artık tek bir kaynaktan gelmiyor: yayınlanmış vokal aralığı
+veritabanı (singingcarrots), makine okunur nota verisi (SymbTr), ileride
+ölçüm veya kulakla bildirim. Bunları eşit güvenilirlikte saymak yanlış
+olurdu; ama düşük güvenli veriyi tamamen dışlamak da havuzun büyümesini
+imkânsız kılıyordu — her yeni kaynak "ya hep ya hiç" kararına dönüşüyordu.
+**Karar:** `Song`'a `source_tier` alanı eklendi (1: yayınlanmış veritabanı,
+2: makine okunur nota, 3: ölçüm, 4: kulakla bildirim, 5: demo). Güven,
+kayda ayrıca yazılmaz — `config.SOURCE_TIER_CONFIDENCE` tablosundan
+türetilen bir `property`'dir, böylece iki yerin tutarsızlaşma riski yok.
+Eşleşme skoru bu güvenle çarpılır: zayıf kaynaklı veri havuza girer ama
+aynı aralık uyumunda güçlü kaynaklının önüne geçemez. Alanların varsayılan
+değeri olduğu için mevcut 68 kaydın JSON'ları değiştirilmedi.
+
+### K-060: Türk makam eserleri "serbest transpoze edilebilir" olarak modellendi — sabit bir mutlak aralık atanmadı
+SymbTr'ın MIDI dosyalarından çıkarılan aralıkların medyanı G4–C6, merkezi
+~D5 çıktı — insan sesi için absürt derecede tiz. Sebep bir veri hatası
+değil: Türk makam müziğinde eser teorik bir referans perdeden notaya
+alınır, gerçek icrada perde seviyesini ("ahenk") icracı kendi sesine göre
+seçer. Yani bu eserlerin **sabit bir mutlak nota aralığı yoktur**; yalnızca
+aralık genişliği (medyan 17 yarı ton) anlamlıdır.
+Sabit bir düzeltme (ör. "hepsini 12 yarı ton indir") uydurma olurdu ve
+CLAUDE.md'nin veri dürüstlüğü kuralını çiğnerdi.
+**Karar:** `Song`'a `freely_transposable` alanı eklendi. Bu eserler
+eşleştirmede ±36 yarı tona kadar serbestçe kaydırılır (ilk denenen ±12
+yetersiz kaldı: pes bir ses için gereken kaydırma 24 yarı tonu aşabiliyor).
+Arayüz bu eserlerde sayısal bir yarı ton önerisi göstermez — "-29 yarı ton
+aşağıdan dene" anlamsız olurdu; yerine "bu eser sesine uygun perdeden
+söylenir; sabit bir tonu yoktur" der. Her kaydın `source_note` alanında
+bunun bir referans olduğu, "şu notalarda söylenir" iddiası olmadığı açıkça
+yazılı.
+
+### K-061: Öneri sonuçlarına dil ve sanatçı kotası eklendi
+Havuza 1586 Türkçe eser eklenince yeni bir sorun doğdu: serbest transpoze
+edilebildikleri için hepsi yüksek skor alıyor ve ilk 10 sonucun tamamını
+dolduruyorlardı — kullanıcı bir daha hiç yabancı şarkı göremeyecekti.
+Aynı şekilde tek bir bestecinin (Ahmet Avni Konuk'un 120 eseri) listeyi
+doldurma riski vardı.
+**Karar:** `get_recommendations()` skor sırasını koruyarak dil başına en
+fazla 6, sanatçı başına en fazla 2 sonuç alıyor. Kota yüzünden liste eksik
+kalırsa (havuzda gerçekten tek dil varsa) atlananlardan tamamlanıyor, yani
+sonuç sayısı azalmıyor. Gerçek bir kayıtla doğrulandı: G2–E4 aralığındaki
+bir ses için 6 yabancı + 4 Türkçe öneri geliyor.
+
+### K-062: Demo şarkılar en düşük katmana indirildi, silinmedi
+12 demo şarkı ("Demo Şarkı 1"), havuzda gerçek veri yokken algoritmanın
+çalıştığını göstermek için vardı (K-042, K-049). Havuz 1654 şarkıya
+çıkınca bunlar üst sıraları işgal etmeye başladı — canlı bir sitede gerçek
+kullanıcıya uydurma şarkı önermek, mevcut herhangi bir gerçek şarkıdan
+kötü. Ayrıca `language: "tr"` etiketli oldukları için dil kotasının Türkçe
+slotlarını doldurup gerçek Türkçe eserlerin hiç görünmemesine yol açtılar.
+**Karar:** Silinmediler (K-049'daki gerekçe hâlâ geçerli: test ve
+geliştirme için değerliler, geniş bir MIDI aralığını sistematik kapsıyorlar)
+ama `SOURCE_TIER_DEMO` (güven 0.2) katmanına indirildiler — artık yalnızca
+daha iyi bir alternatif yoksa görünürler. Katman veri dosyasına yazılmadı,
+`load_demo_songs()` içinde tek yerden atanıyor.
+
+### K-063: Eser adları dosya adından değil MusicXML'den okunuyor
+SymbTr dosya adları yalnızca ASCII taşıyor; buradan üretilen başlıklar
+Türkçe karakterleri kaybediyordu ("Zulfunu", "Hüseyin" yerine "Huseyin").
+**Karar:** Aktarım script'i başlık ve besteci bilgisini aynı eserin
+MusicXML dosyasından okuyor ("Zülfünü Tasvîr İçin", "Hacı Ârif Bey").
+MusicXML'in başlık dönüşümü kesme işaretinden sonraki ekleri de büyütmüş
+olduğu için ("Ordu'Nun") tek bir düzeltme uygulanıyor: kesmeden sonraki
+harf küçültülür. MusicXML dosyaları eserin sözlerini de içeriyor, ancak
+script yalnızca başlık ve besteci alanlarını okur — sözlere dokunulmaz.
+Aynı şekilde eserin sözlü olup olmadığı, txt dosyasındaki söz sütununun
+**doluluğu** sayılarak belirlenir; içerik hiçbir yere yazılmaz.

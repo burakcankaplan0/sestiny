@@ -10,20 +10,28 @@ Gerçek şarkı nota aralıkları uydurulmaz (bkz. CLAUDE.md veri dürüstlüğ�
 """
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 
 from app.core.config import (
     DIFFICULTY_SCORE_PENALTY,
+    FREE_TRANSPOSITION_MAX_SEMITONES,
     MAX_RECOMMENDATIONS,
+    MAX_RECOMMENDATIONS_PER_ARTIST,
+    MAX_RECOMMENDATIONS_PER_LANGUAGE,
     OVERSHOOT_PENALTY_PER_SEMITONE,
+    SOURCE_TIER_CONFIDENCE,
+    SOURCE_TIER_DEMO,
+    SOURCE_TIER_PUBLISHED_RANGE,
+    SOURCE_TIER_REPORTED_BY_EAR,
     TRANSPOSITION_MAX_SEMITONES,
 )
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 DEMO_SONGS_PATH = DATA_DIR / "demo_songs.json"
 VERIFIED_SONGS_PATH = DATA_DIR / "verified_songs.json"
+SYMBTR_SONGS_PATH = DATA_DIR / "symbtr_songs.json"
 
 
 @dataclass(frozen=True)
@@ -39,6 +47,18 @@ class Song:
     verified: bool
     source_note: str
     optional_transposition_limit: int | None
+    # Verinin hangi tür kaynaktan geldiği (bkz. config.SOURCE_TIER_*). Eski
+    # kayıtlarda bulunmayabileceği için varsayılanı en güvenilir katman.
+    source_tier: int = SOURCE_TIER_PUBLISHED_RANGE
+    # Eserin sabit bir mutlak aralığı yoksa (Türk makam müziği: perde seviyesi
+    # icracının seçtiği "ahenk"e göre değişir) serbestçe kaydırılabilir.
+    freely_transposable: bool = False
+
+    @property
+    def confidence(self) -> float:
+        """Kaynak katmanına karşılık gelen güven (0-1). Tek doğruluk kaynağı
+        config'teki tablodur — her kayda ayrıca yazılmaz, tutarsızlık riski olmasın."""
+        return SOURCE_TIER_CONFIDENCE.get(self.source_tier, SOURCE_TIER_CONFIDENCE[SOURCE_TIER_REPORTED_BY_EAR])
 
 
 @dataclass(frozen=True)
@@ -57,8 +77,13 @@ def _load_songs_from(path: Path) -> list[Song]:
 
 @lru_cache
 def load_demo_songs() -> list[Song]:
-    """Yalnızca demo_songs.json'u okur (verified=false). Sonucu önbelleğe alır."""
-    return _load_songs_from(DEMO_SONGS_PATH)
+    """Yalnızca demo_songs.json'u okur (verified=false). Sonucu önbelleğe alır.
+
+    Demo veri tanımı gereği en düşük kaynak katmanındadır — katman veri
+    dosyasına yazılmaz, burada tek yerden atanır ki 12 kaydın hepsinde
+    tekrarlanıp tutarsızlaşma riski olmasın.
+    """
+    return [replace(song, source_tier=SOURCE_TIER_DEMO) for song in _load_songs_from(DEMO_SONGS_PATH)]
 
 
 @lru_cache
@@ -68,9 +93,18 @@ def load_verified_songs() -> list[Song]:
 
 
 @lru_cache
+def load_symbtr_songs() -> list[Song]:
+    """SymbTr'dan aktarılan Türkçe eserler. Dosya yoksa boş liste döner —
+    aktarım script'i henüz çalıştırılmamış olabilir, bu uygulamayı çökertmemeli."""
+    if not SYMBTR_SONGS_PATH.exists():
+        return []
+    return _load_songs_from(SYMBTR_SONGS_PATH)
+
+
+@lru_cache
 def load_songs() -> list[Song]:
-    """Öneri havuzu: demo + doğrulanmış gerçek şarkılar birlikte. Sonucu önbelleğe alır."""
-    return load_demo_songs() + load_verified_songs()
+    """Öneri havuzu: demo + doğrulanmış yabancı + SymbTr Türkçe eserler. Önbelleğe alınır."""
+    return load_demo_songs() + load_verified_songs() + load_symbtr_songs()
 
 
 def _overshoot(song_low: int, song_high: int, user_low: int, user_high: int, shift: int) -> int:
@@ -107,15 +141,23 @@ def score_song(song: Song, user_low_midi: int, user_high_midi: int) -> SongRecom
     1-3 yarı ton taşmada ton değiştirme önerisi, kalan büyük taşmalarda düşük skor
     (şarkı filtrelenmez, sadece sıralamada geride kalır), zorluk skora dahil edilir.
     """
-    max_shift = min(
-        TRANSPOSITION_MAX_SEMITONES,
-        song.optional_transposition_limit if song.optional_transposition_limit is not None else TRANSPOSITION_MAX_SEMITONES,
-    )
+    if song.freely_transposable:
+        # Makam müziğinde eserin mutlak perdesi icracıya aittir; notasyondaki
+        # yerleşim bir referanstır, sınır değil (bkz. K-060).
+        max_shift = FREE_TRANSPOSITION_MAX_SEMITONES
+    else:
+        max_shift = min(
+            TRANSPOSITION_MAX_SEMITONES,
+            song.optional_transposition_limit if song.optional_transposition_limit is not None else TRANSPOSITION_MAX_SEMITONES,
+        )
     best_shift, best_overshoot = _find_best_shift(song.min_midi, song.max_midi, user_low_midi, user_high_midi, max_shift)
 
     score = 100
     score -= best_overshoot * OVERSHOOT_PENALTY_PER_SEMITONE
     score -= DIFFICULTY_SCORE_PENALTY.get(song.difficulty, 0)
+    # Kaynağı daha zayıf olan veri, aynı aralık uyumunda geride kalır — havuza
+    # girer ama üst sıraları işgal etmez (bkz. K-059).
+    score = round(score * song.confidence)
     score = max(0, min(100, score))
 
     # Yalnızca kaydırma gerçekten taşmayı sıfıra indiriyorsa öneri yapılır;
@@ -125,13 +167,52 @@ def score_song(song: Song, user_low_midi: int, user_high_midi: int) -> SongRecom
     return SongRecommendation(song=song, match_score=score, transposition_semitones=transposition_semitones)
 
 
+def _apply_diversity_quota(scored: list[SongRecommendation], limit: int) -> list[SongRecommendation]:
+    """Skor sırasını koruyarak dil ve sanatçı kotası uygular.
+
+    Havuzda bir grup (ör. 1500+ Türkçe makam eseri) diğerlerini sayıca çok
+    aşabiliyor; kota olmasa bu grup listenin tamamını doldurur ve kullanıcı tek
+    tip öneri görür. Kota dolunca o gruptaki şarkılar atlanır, sıradaki farklı
+    gruptan şarkı yukarı çıkar (bkz. K-061).
+
+    Yeterli çeşitlilik yoksa (ör. havuzda gerçekten tek dil varsa) liste kotayla
+    kısıtlanıp eksik kalmaz: ikinci geçişte atlananlardan tamamlanır.
+    """
+    selected: list[SongRecommendation] = []
+    skipped: list[SongRecommendation] = []
+    language_counts: dict[str, int] = {}
+    artist_counts: dict[str, int] = {}
+
+    for item in scored:
+        if len(selected) >= limit:
+            break
+        language = item.song.language
+        artist = item.song.artist
+        if (
+            language_counts.get(language, 0) >= MAX_RECOMMENDATIONS_PER_LANGUAGE
+            or artist_counts.get(artist, 0) >= MAX_RECOMMENDATIONS_PER_ARTIST
+        ):
+            skipped.append(item)
+            continue
+        selected.append(item)
+        language_counts[language] = language_counts.get(language, 0) + 1
+        artist_counts[artist] = artist_counts.get(artist, 0) + 1
+
+    # Kota yüzünden liste eksik kaldıysa, en iyi atlananlarla tamamla.
+    if len(selected) < limit:
+        selected.extend(skipped[: limit - len(selected)])
+        selected.sort(key=lambda item: item.match_score, reverse=True)
+
+    return selected
+
+
 def get_recommendations(
     user_low_midi: int,
     user_high_midi: int,
     limit: int = MAX_RECOMMENDATIONS,
 ) -> list[SongRecommendation]:
-    """Havuzdaki tüm şarkıları (demo + doğrulanmış) puanlar, en iyi eşleşenden başlayarak sıralar."""
+    """Havuzdaki tüm şarkıları puanlar, en iyi eşleşenden sıralar, çeşitlilik kotası uygular."""
     songs = load_songs()
     scored = [score_song(song, user_low_midi, user_high_midi) for song in songs]
     scored.sort(key=lambda item: item.match_score, reverse=True)
-    return scored[:limit]
+    return _apply_diversity_quota(scored, limit)

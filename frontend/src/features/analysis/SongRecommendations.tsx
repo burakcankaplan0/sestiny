@@ -17,7 +17,14 @@ const DIFFICULTY_OPTIONS: { value: DifficultyFilter; label: string }[] = [
   { value: "zor", label: texts.recommendations.difficultyHard },
 ];
 
-function transpositionHint(semitones: number | null): string | null {
+function transpositionHint(song: SongRecommendation): string | null {
+  // Serbest transpoze edilebilen eserlerde (Türk makam müziği) sayısal bir yarı
+  // ton önerisi anlamsız: eserin sabit bir mutlak perdesi yok, icracı zaten
+  // kendi sesine uygun ahengi seçiyor. Hesaplanan kaydırma 20-30 yarı tona
+  // çıkabildiği için kullanıcıya sayı göstermek kafa karıştırıcı olurdu.
+  if (song.freely_transposable) return texts.recommendations.singableInAnyKey;
+
+  const semitones = song.transposition_semitones;
   if (semitones === null || semitones === 0) return null;
   return semitones < 0
     ? texts.recommendations.transposeDown(Math.abs(semitones))
@@ -80,10 +87,8 @@ export function SongRecommendations({ recommendations }: SongRecommendationsProp
                 )}
               </div>
 
-              {transpositionHint(song.transposition_semitones) && (
-                <p className="recommendations__transpose-hint">
-                  {transpositionHint(song.transposition_semitones)}
-                </p>
+              {transpositionHint(song) && (
+                <p className="recommendations__transpose-hint">{transpositionHint(song)}</p>
               )}
             </li>
           ))}

@@ -68,7 +68,7 @@ class ProfileSummary(BaseModel):
 
 
 class SongRecommendation(BaseModel):
-    """Tek bir demo şarkı önerisi. `verified: false` — gerçek/doğrulanmış şarkı değildir."""
+    """Tek bir şarkı önerisi. `verified: false` olanlar demo veridir, gerçek şarkı değildir."""
 
     id: str
     title: str
@@ -83,6 +83,10 @@ class SongRecommendation(BaseModel):
     transposition_semitones: int | None
     verified: bool
     source_note: str
+    # Türk makam müziğinde eserin sabit bir mutlak perdesi yoktur; icracı kendi
+    # sesine uygun ahengi seçer (bkz. K-060). Bu tür eserlerde arayüz sayısal bir
+    # yarı ton önerisi göstermez — "sesine uygun perdeden söylenir" der.
+    freely_transposable: bool
 
 
 class AnalyzeSessionResponse(BaseModel):

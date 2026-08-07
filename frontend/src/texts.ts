@@ -124,13 +124,16 @@ export const texts = {
   recommendations: {
     title: "Şarkı önerileri",
     intro:
-      "Bu öneriler, tahmini rahat bölgene göre sıralanmış demo verilerdir — gerçek, doğrulanmış bir şarkı listesi değildir.",
+      "Bu öneriler, tahmini rahat bölgene göre sıralanmıştır. Şarkıların nota aralıkları dış kaynaklardan alınmıştır; yine de yaklaşık değerlerdir ve icraya göre değişebilir.",
     empty: "Bu aralık için öneri bulunamadı.",
     demoBadge: "Demo veri",
     matchLabel: (percent: number) => `%${percent} eşleşme`,
     rangeLabel: (min: string, max: string) => `${min} – ${max}`,
     transposeDown: (semitones: number) => `${semitones} semiton aşağıdan denemek daha rahat olabilir.`,
     transposeUp: (semitones: number) => `${semitones} semiton yukarıdan denemek daha rahat olabilir.`,
+    // Türk makam müziğinde eserin sabit bir mutlak perdesi yoktur; icracı kendi
+    // sesine uygun "ahenk"i seçer. Bu yüzden sayısal yarı ton önerisi verilmez.
+    singableInAnyKey: "Bu eser sesine uygun perdeden söylenir; sabit bir tonu yoktur.",
     difficultyFilterLabel: "Zorluk",
     difficultyAll: "Tümü",
     difficultyEasy: "Kolay",
