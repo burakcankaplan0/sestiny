@@ -35,21 +35,38 @@ venv/bin/pip install -r requirements.txt
 
 ## Katmanlar
 
-| Modül | İş |
-| --- | --- |
-| `models.py` | `LabSong` + enum'lar (vocal_mode, source_type, review_status) |
-| `notes.py` | Hz ↔ MIDI ↔ nota adı (backend/music_theory'nin saf kopyası) |
-| `catalog.py` | SQLite katalog: durum, resume, review state |
-| `decode.py` | Ses → standart mono dizi (PyAV) |
-| `ingest/separate.py` | Vokal ayrıştırma (RoFormer / Demucs, seçilebilir) — Faz 1 |
-| `ingest/pitch.py` | F0 + frame güveni (RMVPE / FCPE / pyin) — Faz 1 |
-| `ingest/segment.py` | sung/rap segment sınıflama (F0 stabilite) — Faz 1 |
-| `ingest/range.py` | robust min/max + tessitura — Faz 1 |
-| `ingest/confidence.py` | ölçülen kaliteden güven — Faz 1 |
-| `ingest/pipeline.py` | aşamaları birleştirir | 
-| `batch.py` | klasör tara → sıraya al → tek tek işle → özet (resume) |
-| `review/` | yerel FastAPI + admin arayüzü — Faz 3 |
-| `calibrate.py` | singingcarrots'a karşı doğruluk ölçümü — Faz 2 |
-| `export.py` | onaylı kayıtları production JSON'una projekte eder |
+| Modül | İş | Durum |
+| --- | --- | --- |
+| `models.py` | `LabSong` + enum'lar | ✅ |
+| `notes.py` | Hz ↔ MIDI ↔ nota adı | ✅ |
+| `catalog.py` | SQLite katalog (durum/resume/review) | ✅ |
+| `decode.py` | Ses → mono dizi (PyAV) + content hash | ✅ |
+| `config.py` | Analiz eşikleri (merkezî, açıklamalı) | ✅ |
+| `ingest/pitch.py` | F0 + frame güveni (RMVPE, ONNX, torch'suz) | ✅ Direct |
+| `ingest/note_segments.py` | Frame → güvenilir nota segmentleri | ✅ |
+| `ingest/range.py` | Full range (uç-nota eşiği) + tessitura | ✅ |
+| `ingest/confidence.py` | Ölçüm-tabanlı güven | ✅ |
+| `ingest/engine.py` | Direct RMVPE motoru + debug raporu | ✅ |
+| `ingest/separate.py` | Vokal ayrıştırma (RoFormer/Demucs) | ⏳ Pipeline B (benchmark sonrası) |
+| `ingest/segment.py` | sung/rap sınıflama | ⏳ sonraki faz |
+| `ingest/pipeline.py` | Direct+Separated birleştirici | ⏳ |
+| `batch.py` | klasör tara → işle → özet (resume) | ✅ iskelet |
+| `export.py` | onaylı → production JSON | ✅ |
+| `review/` | yerel FastAPI admin arayüzü | ⏳ Faz 3 |
+| `calibrate.py` | singingcarrots doğruluk ölçümü | ⏳ Faz 2 |
 
-Ayrıntılı plan ve gerekçeler: `docs/DECISIONS.md` (K-064+) ve konuşma planı.
+Analiz eşikleri ve yöntemleri: `docs/ANALYSIS_THRESHOLDS.md`.
+Kararlar/gerekçeler: `docs/DECISIONS.md` (K-064 … K-069).
+
+### Direct RMVPE motorunu çalıştırma (lab venv)
+
+```python
+from tools.song_ingestion.ingest.engine import analyze_audio, build_debug_report
+# audio: mono float32 numpy dizisi, sample_rate ile
+result = analyze_audio(audio, sample_rate)
+print(build_debug_report(result))
+```
+
+Motor mantığı (segmentasyon/range/tessitura/confidence) sentetik frame'lerle
+backend/.venv ile test edilir; gerçek RMVPE testi lab venv gerektirir
+(`test_rmvpe_integration.py`, `importorskip`).

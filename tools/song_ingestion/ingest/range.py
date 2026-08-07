@@ -1,47 +1,110 @@
-"""Robust aralık + tessitura hesabı — ham min/max ASLA doğrudan kullanılmaz.
+"""Full vocal range + tessitura — nota segmentlerinden hesaplanır.
 
-Adımlar (bkz. plan Q3-bis):
-1. Yalnızca güvenli (frame confidence ≥ eşik) ve sürekli (aynı yarım tonda
-   ≥ min süre tutulan, kümelenmiş) frame'ler alınır. 30 ms'lik tek bir F6 nota
-   sayılmaz.
-2. Full range: ham uç yerine robust yüzdelik (alt ~2-5, üst ~95-98) — tek-frame
-   oktav hatası/glitch elenir. Bir sınır notasının kabulü için ≥ N tutarlı
-   tahmin şartı. En pes ve en tiz notanın zamanı (timestamp) kaydedilir.
-3. Tessitura: her nota toplam söylenen süreyle ağırlıklanır, pitch histogramı
-   kurulur, söylenen zamanın ~%70'ini kaplayan merkez bant alınır.
+- Full range: yalnızca UÇ-nota eşiğini (daha katı süre/frame) geçen
+  segmentlerden en pes ve en tiz. Kısa/tekil bir yüksek geçiş ucu belirlemez.
+  Uç notaların timestamp'i ve süresi kaydedilir (review'da "o anı dinle" için).
+- Tessitura: kabul edilen tüm segmentlerin SÜRE-AĞIRLIKLI dağılımından, toplam
+  vokal süresinin ~%TESSITURA_COVERAGE'ını kaplayan en dar sürekli MIDI bandı.
+  Tek kullanımlık ad-lib tessitura'yı genişletmez.
 
-Not: backend/app/services/pitch_analysis.py'deki iki yaklaşım burada yeniden
-kullanılacaktır: `_remove_pitch_jumps` (oktav-hatası eleme) ve yüzdelik-tabanlı
-rahat-bölge (tessitura'nın temeli zaten bu).
-
-BU MODÜL FAZ 1'DE DOLDURULACAK — parametreler burada, mantık Faz 1'de.
+Yalnızca numpy — sentetik segmentlerle test edilebilir.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-FRAME_CONFIDENCE_THRESHOLD = 0.72  # bu güvenin altındaki frame'ler atılır
-MIN_CONSISTENT_ESTIMATES_FOR_BOUNDARY = 10  # bir uç notayı kabul için
-FULL_RANGE_LOW_PERCENTILE = 3
-FULL_RANGE_HIGH_PERCENTILE = 97
-TESSITURA_COVERAGE = 0.70  # söylenen zamanın bu oranını kaplayan merkez bant
+from ..config import (
+    EXTREME_MIN_DURATION_SECONDS,
+    EXTREME_MIN_SUPPORTING_FRAMES,
+    TESSITURA_COVERAGE,
+)
+from ..notes import midi_to_note_name
+from .note_segments import NoteSegment
 
 
 @dataclass(frozen=True)
 class RangeResult:
     full_range_low_midi: int
     full_range_high_midi: int
+    full_range_low_note: str
+    full_range_high_note: str
+    range_semitones: int
+    low_note_timestamp: float
+    high_note_timestamp: float
+    low_note_duration: float
+    high_note_duration: float
     tessitura_low_midi: int
     tessitura_high_midi: int
-    detected_low_timestamp: float
-    detected_high_timestamp: float
+    tessitura_low_note: str
+    tessitura_high_note: str
 
 
-def compute_range(pitch_frames) -> "RangeResult | None":
-    """Güvenli/sürekli frame'lerden full range + tessitura + timestamp'ler.
+def _tessitura(segments: list[NoteSegment]) -> tuple[int, int]:
+    """Süre-ağırlıklı en dar sürekli MIDI bandı (kapsama ≥ TESSITURA_COVERAGE).
 
-    Yeterli güvenilir melodik veri yoksa None döner (aralık uydurulmaz).
-    Faz 1'de doldurulacak.
+    Yöntem: her yarım ton için toplam süre (histogram) çıkarılır; ardından
+    en pesten en tize sürekli pencereler taranıp toplam sürenin
+    TESSITURA_COVERAGE oranını karşılayan EN DAR pencere seçilir.
     """
-    raise NotImplementedError("Robust aralık + tessitura Faz 1'de eklenecek.")
+    durations: dict[int, float] = {}
+    for seg in segments:
+        durations[seg.midi] = durations.get(seg.midi, 0.0) + seg.duration
+    total = sum(durations.values())
+    if total <= 0:
+        raise ValueError("Tessitura için süre yok.")
+
+    lo_midi = min(durations)
+    hi_midi = max(durations)
+    target = TESSITURA_COVERAGE * total
+
+    best_low, best_high = lo_midi, hi_midi
+    best_span = hi_midi - lo_midi
+    for low in range(lo_midi, hi_midi + 1):
+        covered = 0.0
+        for high in range(low, hi_midi + 1):
+            covered += durations.get(high, 0.0)
+            if covered >= target:
+                span = high - low
+                if span < best_span:
+                    best_span = span
+                    best_low, best_high = low, high
+                break  # bu low için en dar pencere bulundu
+    return best_low, best_high
+
+
+def compute_range(segments: list[NoteSegment]) -> RangeResult | None:
+    """Segmentlerden full range + tessitura. Uç-nota eşiğini geçen segment
+    yoksa None döner (aralık uydurulmaz)."""
+    if not segments:
+        return None
+
+    eligible = [
+        seg
+        for seg in segments
+        if seg.duration >= EXTREME_MIN_DURATION_SECONDS
+        and seg.frame_count >= EXTREME_MIN_SUPPORTING_FRAMES
+    ]
+    if not eligible:
+        return None
+
+    low_seg = min(eligible, key=lambda s: s.midi)
+    high_seg = max(eligible, key=lambda s: s.midi)
+
+    tess_low, tess_high = _tessitura(segments)
+
+    return RangeResult(
+        full_range_low_midi=low_seg.midi,
+        full_range_high_midi=high_seg.midi,
+        full_range_low_note=midi_to_note_name(low_seg.midi),
+        full_range_high_note=midi_to_note_name(high_seg.midi),
+        range_semitones=high_seg.midi - low_seg.midi,
+        low_note_timestamp=low_seg.start_time,
+        high_note_timestamp=high_seg.start_time,
+        low_note_duration=low_seg.duration,
+        high_note_duration=high_seg.duration,
+        tessitura_low_midi=tess_low,
+        tessitura_high_midi=tess_high,
+        tessitura_low_note=midi_to_note_name(tess_low),
+        tessitura_high_note=midi_to_note_name(tess_high),
+    )

@@ -751,3 +751,45 @@ kayıt `review_status=approved` VE `human_verified=true` olmadan production'a
 export edilmez (`export.py`) — dürüstlük kapısı budur. Rap/spoken bir parçada
 güvenilir melodik aralık bulunamazsa sayı üretilmez, `vocal_mode=rap`,
 `needs_review` (plan Q3-bis).
+
+### K-068: Minimal ML stack — önce yalnızca Direct RMVPE (torch'suz), separation ölçülene kadar ertelendi
+Kullanıcı, tüm ağır yığını bir kerede kurmak yerine Faz 1'i "Pitch Pipeline
+Benchmark" olarak yeniden şekillendirdi: RMVPE polifonik müzikten doğrudan
+vokal F0 çıkarabildiği için vokal ayrıştırmayı **ölçmeden zorunlu kılmamak**.
+Donanım tespit edildi: Apple M1 Ultra (arm64), **128 GB RAM**, macOS 15.7,
+Python 3.12.13 — MLX-native yol tamamen uygulanabilir, torch'a mecbur değiliz.
+**Karar (Adım 1+2, kullanıcı onaylı):** Ayrı lab venv'ine (`tools/song_ingestion/venv`)
+YALNIZCA `rmvpe-onnx==0.2.3` kuruldu. Bu tek paket onnxruntime (arm64 +
+CoreML EP dahil), librosa, scipy, numpy, huggingface-hub'ı getiriyor —
+**torch'a hiç girmiyor**. Model (rmvpe.onnx, 362 MB) ilk çalışmada HF'ten
+iniyor. Gerçek smoke: 220 Hz sabit ton → A3 (doğru), analysis_confidence
+0.935; soğuk çağrı ~5.9 sn (model yükleme dahil), sıcak inference ~0.04 sn
+(CoreML EP otomatik seçildi). Vokal ayrıştırma (Pipeline B) HENÜZ
+KURULMADI — benchmark separation'ı haklı çıkarırsa, MLX-native (torch'suz)
+`mlx-audio-separator`/`demucs-mlx` ile eklenecek; `audio-separator[cpu]`/
+`demucs` torch>=2.3 zorunlu kıldığı için son çare.
+
+### K-069: Direct RMVPE analiz motoru — segmentasyon + tessitura + ölçülen güven (hepsi heuristik, config'te)
+RMVPE 10 ms frame-level F0 üretir; ham min/max ASLA doğrudan kullanılmaz.
+**Karar (motor tasarımı):**
+- **Nota segmentasyonu:** frame filtreleme (güven + F0 aralığı) → hafif medyan
+  yumuşatma → en yakın yarım tona yuvarlama → ardışık aynı-notalı frame'leri
+  birleştir → süre/frame eşiğini geçmeyenleri (spike) ele. Yuvarlayarak
+  segmentleme glide'ı doğal ele alır (her yarım ton kısa bir segment, binlerce
+  parça değil).
+- **Full range:** yalnızca daha katı UÇ-nota eşiğini (`EXTREME_MIN_DURATION`
+  0.14 sn / 10 frame) geçen segmentlerden. Kısa bir tiz ad-lib ucu belirlemez;
+  uç notaların timestamp'i ve süresi kaydedilir. Uç yoksa aralık üretilmez.
+- **Tessitura (full range'den ayrı):** segment sürelerinden MIDI histogramı,
+  toplam vokal süresinin %75'ini kaplayan en dar sürekli bant. Ad-lib bandı
+  genişletmez.
+- **analysis_confidence:** keyfi sabit değil; ölçülen bileşenlerin ağırlıklı
+  toplamı (avg RMVPE güveni, voiced oranı, segment kapsaması, uç-nota desteği)
+  × oktav-sıçrama cezası → [0,1]. Formül ve ağırlıklar `config.py`'de.
+- **needs_review:** düşük güven / çok az frame / uç yok / sıra dışı geniş
+  aralık / parçalı pitch track → sebep listesi döner.
+Tüm eşikler MVP heuristiği olarak `tools/song_ingestion/config.py`'de merkezî
+ve açıklamalı; yöntem `docs/ANALYSIS_THRESHOLDS.md`'de. 9 sentetik test
+(sabit nota, çok-nota, spike reddi, kısa-yüksek-nota reddi, glide, sessizlik,
+ad-lib tessitura'yı genişletmiyor, debug şekli) + 1 RMVPE entegrasyon testi
+(lab venv'de gerçek model) motoru doğruluyor.

@@ -1097,3 +1097,49 @@ Onu takiben Faz 2 (30-50 yabancı şarkıyla calibration, doğruluk eşiği), Fa
 (batch + review arayüzü), Faz 4 (Türkçe pilot), Faz 5 (ölçekleme). Her faz
 sonunda durulup kullanıcı onayı beklenecek. Sınır değişmedi: araç ses dosyası
 edinmez, kullanıcı kendi dosyalarını verir; export insan onayına bağlı.
+
+---
+
+## Song Ingestion Lab — Faz 1 / Adım 1-2: Direct RMVPE motoru · 2026-08-07
+
+Kullanıcı Faz 1'i "Pitch Pipeline Benchmark" olarak yeniden şekillendirdi:
+vokal ayrıştırmayı ölçmeden zorunlu kılmamak, önce Direct RMVPE'yi kurup
+çalıştırmak (bkz. K-068). Bu adımda yalnızca Direct RMVPE analiz motoru
+tamamlandı; separation/MLX/batch/UI/export'a girilmedi.
+
+### Donanım (tespit edildi, kurulumdan önce)
+
+Apple **M1 Ultra** (arm64), **128 GB RAM**, macOS 15.7.2, Python 3.12.13.
+→ MLX-native yol uygulanabilir, torch'a mecbur değiliz; RAM hiç sorun değil.
+
+### Kurulan (yalnızca, kullanıcı onaylı)
+
+Ayrı lab venv'ine `rmvpe-onnx==0.2.3` — **torch YOK**. onnxruntime (arm64 +
+CoreML), librosa, scipy, numpy, huggingface-hub bağımlılık olarak geldi.
+Model rmvpe.onnx (362 MB) ilk çalışmada indi.
+
+### Yazılan motor (Direct RMVPE)
+
+`config.py` (merkezî eşikler), `ingest/pitch.py` (RMVPE lazy), `note_segments.py`
+(filtre + segmentasyon), `range.py` (full range + tessitura), `confidence.py`
+(ölçüm-tabanlı), `engine.py` (orchestrator + AnalysisResult + debug JSON).
+Ayrıntılı yöntem: `docs/ANALYSIS_THRESHOLDS.md`. Kararlar: K-069.
+
+### Testler
+
+| Test | Sonuç |
+| --- | --- |
+| Production backend | ✅ 68/68 |
+| Lab (backend venv) | ✅ **25 geçti** + 1 atlandı (RMVPE entegrasyonu importorskip) |
+| Sentetik motor (A-F) | ✅ 9/9 — sabit A3, A3-C4-E4, spike reddi, kısa-yüksek-nota reddi, glide (parçalanmıyor), sessizlik→needs_review, ad-lib tessitura'yı genişletmiyor, debug şekli |
+| Gerçek RMVPE smoke (lab venv) | ✅ 220 Hz → A3, güven 0.935; soğuk ~5.9 sn, sıcak inference ~0.04 sn |
+
+### Bilinen sınırlamalar / sonraki
+
+- Henüz gerçek şarkı denenmedi (yalnızca sentetik ton). Eşikler MVP heuristiği;
+  gerçek şarkı calibration'ında (sonraki faz) ayarlanacak.
+- Vokal ayrıştırma (Pipeline B) kurulmadı; Direct vs Separated benchmark'ı
+  gerçek şarkı gerektiriyor. Sıra: kullanıcı gerçek şarkı verince A vs B.
+- Production backend hâlâ hiçbir ağır ML bağımlılığı almadı (Render hafif).
+
+Bu noktada durulup gerçek şarkı testi için kullanıcı onayı bekleniyor.

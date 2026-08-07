@@ -1,27 +1,58 @@
-"""analysis_confidence hesabı — ÖLÇÜLEN kaliteden türetilir, sabit sayı DEĞİL.
+"""analysis_confidence — ÖLÇÜLEN kaliteden türetilir, sabit sayı DEĞİL.
 
-Kullanıcının katı isteği (plan 8. madde): "MIDI = 0.9", "Audio = 0.7" gibi keyfi
-eşleme YOK. Güven, gerçekten ölçülen sinyal kalitesinden gelir. `source_type`
-ayrı bir alandır (audio_analysis + confidence 0.93 + human_verified true mümkün).
+Kullanıcının katı isteği: "MIDI = 0.9, Audio = 0.7 gibi keyfi güven verme."
+Güven, gerçekten ölçülen bileşenlerden üretilir; ağırlıklar ve formül config'te
+(CONF_WEIGHT_*), açıklaması docs/ANALYSIS_THRESHOLDS.md'de.
 
-Girdiler (hepsi 0-1 civarı, ölçülen):
-- qualified_frame_ratio: nitelikli (güvenli + sürekli) frame / toplam voiced frame
-- boundary_support: uç notaları destekleyen tutarlı tahmin sayısının yeterliliği
-- separation_bleed: ayrıştırma sonrası kalıntı vokal-dışı enerji (yüksek = kötü)
-- sustained_note_ratio: sung oranı (rap'e yakınsa güven düşer)
-
-BU MODÜL FAZ 1'DE DOLDURULACAK — girdi sözleşmesi burada.
+Formül:
+    base = W_AVG*avg_conf + W_VOICED*voiced_ratio
+         + W_COVERAGE*coverage + W_EXTREME*extreme_support
+    confidence = base * (1 - JUMP_PENALTY * octave_jump_ratio)   → [0,1]
 """
 
 from __future__ import annotations
 
+from ..config import (
+    CONF_JUMP_PENALTY,
+    CONF_WEIGHT_AVG_CONFIDENCE,
+    CONF_WEIGHT_EXTREME_SUPPORT,
+    CONF_WEIGHT_SEGMENT_COVERAGE,
+    CONF_WEIGHT_VOICED_RATIO,
+    EXTREME_MIN_DURATION_SECONDS,
+)
+
+
+def _clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
+    return max(low, min(high, value))
+
 
 def compute_confidence(
     *,
-    qualified_frame_ratio: float,
-    boundary_support: float,
-    separation_bleed: float,
-    sustained_note_ratio: float,
+    average_pitch_confidence: float,
+    voiced_frame_ratio: float,
+    segment_coverage: float,
+    low_note_duration: float,
+    high_note_duration: float,
+    octave_jump_ratio: float,
 ) -> float:
-    """Ölçülen kalite bileşenlerinden 0-1 güven üretir. Faz 1'de doldurulacak."""
-    raise NotImplementedError("Ölçüm-tabanlı güven Faz 1'de eklenecek.")
+    """Ölçülen bileşenlerden 0-1 güven üretir.
+
+    - average_pitch_confidence: kabul edilen frame'lerin ortalama RMVPE güveni
+    - voiced_frame_ratio: geçerli frame / toplam frame
+    - segment_coverage: geçerli segment süresi / toplam ses süresi
+    - low/high_note_duration: uç notaların desteklenme süresi
+    - octave_jump_ratio: parçalılık göstergesi (çarpımsal ceza)
+    """
+    # Uç nota desteği: iki ucun daha zayıf olanı, "yeterince uzun" eşiğine oranlanır.
+    extreme_support = _clamp(
+        min(low_note_duration, high_note_duration) / EXTREME_MIN_DURATION_SECONDS
+    )
+
+    base = (
+        CONF_WEIGHT_AVG_CONFIDENCE * _clamp(average_pitch_confidence)
+        + CONF_WEIGHT_VOICED_RATIO * _clamp(voiced_frame_ratio)
+        + CONF_WEIGHT_SEGMENT_COVERAGE * _clamp(segment_coverage)
+        + CONF_WEIGHT_EXTREME_SUPPORT * extreme_support
+    )
+    penalized = base * (1.0 - CONF_JUMP_PENALTY * _clamp(octave_jump_ratio))
+    return round(_clamp(penalized), 3)

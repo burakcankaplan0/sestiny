@@ -2,32 +2,32 @@
 # Bunlar YALNIZCA bu araç için, yalnızca geliştiricinin Mac'inde kurulur.
 # Sestiny production backend'i (Render) bu paketlerin HİÇBİRİNİ kurmaz.
 #
-# Faz 0 (iskelet) bunların hiçbirini GEREKTİRMEZ — models/notes/catalog/batch
-# yalnızca standart kütüphaneyle çalışır. Aşağıdakiler Faz 1'de (pipeline)
-# kurulur. Sürümler, kurulum anında çalışan sürümle birebir pinlenecektir
-# (K-056 dersi: yerel kurulum ile requirements sürümleri ayrışmasın).
+# Sürümler, kurulum anında çalışan sürümle birebir pinlenir (K-056 dersi).
 #
-# --- Ses çözme ---
-# av                      # PyAV — backend ile aynı; ses dosyalarını diziye çevirir
+# --- Pitch (F0) çıkarımı — KURULU (Adım 1/2) ---
+# RMVPE, saf ONNX Runtime; torch'a HİÇ girmez. onnxruntime (arm64 + CoreML),
+# librosa, scipy, numpy, huggingface-hub bunun bağımlılıkları olarak gelir.
+# Model (rmvpe.onnx, 362 MB) ilk çalışmada HF'ten iner, Git'e/cache'e girmez.
+rmvpe-onnx==0.2.3
+# (bağımlılık olarak gelenler; netlik için sabitlendi)
+onnxruntime==1.28.0
+librosa==0.11.0
+scipy==1.18.0
+numpy==2.4.6
+huggingface_hub==1.26.1
 #
-# --- Vokal ayrıştırma (Mac: ONNX Runtime / CoreML tercih; torch MPS'ten kaçın) ---
-# audio-separator[cpu]    # Mel-Band RoFormer / MDX çalıştırır, CoreML EP
-# demucs                  # HTDemucs (MIT) — yedek/çapraz kontrol
+# --- Ses çözme (gerçek dosya için gerekince) ---
+# av                      # PyAV — backend ile aynı
 #
-# --- Pitch (F0) çıkarımı ---
-# rmvpe-onnx              # RMVPE, ONNX Runtime (torch'a girmez) — varsayılan
-# torchcrepe              # yedek (torch tabanlı)
-# librosa                 # pyin — temiz frame'lerde çapraz kontrol
+# --- Vokal ayrıştırma — HENÜZ KURULMADI (Pipeline B, benchmark haklı çıkarırsa) ---
+# Apple Silicon'da MLX-native, torch'suz tercih edilir:
+# mlx-audio-separator     # RoFormer/Demucs, MLX, inference'ta torch YOK
+# demucs-mlx              # HTDemucs, MLX
+# (audio-separator[cpu] / demucs torch>=2.3 ZORUNLU kılar — MLX başarısız olmadıkça kaçınılır)
 #
-# --- MIDI (yardımcı doğrulama kaynağı) ---
-# mido                    # backend ile aynı
-#
-# --- Review arayüzü ---
-# fastapi
-# uvicorn[standard]
-#
-# --- Metadata ---
-# mutagen                 # ID3 vb. etiketlerden şarkı adı/sanatçı okuma
-#
-# --- Test ---
-# pytest
+# --- Sonraki fazlar ---
+# mido                    # MIDI yardımcı doğrulama
+# fastapi / uvicorn[standard]  # review arayüzü (Faz 3)
+# mutagen                 # ID3 metadata
+# pytest                  # lab testleri (backend venv'de zaten var; RMVPE entegrasyon
+#                         # testini lab venv'de koşmak istenirse buraya kurulur)
