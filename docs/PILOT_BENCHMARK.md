@@ -18,8 +18,8 @@ aynı motor kullanılır. Vokal ayrıştırma (Pilot B) 5 şarkı bitmeden kurul
 
 | # | Tip | Şarkı | Durum |
 | --- | --- | --- | --- |
-| 1 | Kadın pop | Aleyna Tilki — Sen Olsan Bari | ✅ Tamamlandı |
-| 2 | Erkek pop | (bekleniyor) | ⬜ |
+| 1 | Kadın pop | Aleyna Tilki — Sen Olsan Bari | ✅ Tamamlandı (low ✅ / high ✅) |
+| 2 | Erkek pop | Tarkan — Dudu | ✅ Tamamlandı (low ✅ / high ⚠️ needs review) |
 | 3 | Arabesk / güçlü vibrato | (bekleniyor) | ⬜ |
 | 4 | Melodik rap / autotune | (bekleniyor) | ⬜ |
 | 5 | Rock / yoğun enstrüman | (bekleniyor) | ⬜ |
@@ -65,7 +65,41 @@ Analiz (CPU EP; CoreML uzun girdide çöktüğü için, bkz. K-068 güncellemesi
 
 **Direct RMVPE başarılı mı?** ✅ **Evet.**
 
-### 2-5
+### 2. Erkek pop — Tarkan / Dudu · ⚠️ Kısmi (low doğru, high şüpheli)
+
+| Alan | Değer |
+| --- | --- |
+| Süre | 264.0 sn |
+| Metadata | yok (ID3 boş) — tahmin edilmedi |
+| **Full range low** | **F3** (MIDI 53) · 147.17 sn · destek 0.14 sn · median conf 0.796 |
+| **Full range high** | **F#5** (MIDI 78) · 261.64 sn · destek 0.20 sn · median conf 0.55 |
+| **Tessitura** | **F#3–F#4** (12 yarı ton) · geçerli vokalin %75'i |
+| analysis_confidence | 0.63 |
+| average RMVPE confidence | 0.742 |
+| voiced_frame_ratio | 0.393 |
+| discarded_frame_ratio | 0.607 |
+| octave_jump_ratio | 0.001 |
+| kabul edilen segment | 532 · toplam geçerli vokal 72.2 sn |
+| needs_review | Hayır (pending) |
+| İşlem süresi | model yükleme 1.53 sn · inference 4.74 sn · toplam 4.85 sn |
+
+**Manuel doğrulama (kullanıcı):**
+- `low_manual_verification = approved` — F3 (147.17 sn) gerçek ve yeterince güvenilir.
+- `high_manual_verification = needs_review` — F#5 tamamen rastgele hata değil
+  (bölgede ~710–743 Hz'lik gerçek bir perdeli olay var), ama **ana vokal olduğu
+  güvenilir şekilde doğrulanamıyor**: outro'da olması, median conf 0.55, yalnızca
+  0.20 sn destek, efekt/backing vocal/melodik enstrüman olasılığı. Yanlış olarak
+  işaretlenmedi; `human_verified high` olarak da kabul edilmedi.
+
+**Not edilen sınırlama:** *Direct RMVPE'nin kısa, düşük-confidence tiz/outro
+olaylarında kaynak atfı (bu ana vokal mi, backing/efekt/enstrüman mı?) yapamaması.*
+Bu, ileride ayrıştırma fallback'inin (Pipeline B) değerlendirileceği ilk somut
+gerekçe adayı — ama karar 5 şarkı bitmeden verilmeyecek, eşikler/pipeline
+değiştirilmeyecek.
+
+**Direct RMVPE başarılı mı?** ⚠️ **Kısmi** — low güvenilir, high doğrulanamadı.
+
+### 3-5
 
 (bekleniyor)
 
@@ -76,7 +110,7 @@ Analiz (CPU EP; CoreML uzun girdide çöktüğü için, bkz. K-068 güncellemesi
 | Şarkı | Low sonucu | Low doğrulama | High sonucu | High doğrulama | Tessitura | Confidence | Direct RMVPE başarılı? |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1. Aleyna Tilki — Sen Olsan Bari | A#3 | ✅ Doğru | C5 | ✅ Doğru | D4–G#4 | 0.652 | ✅ Evet |
-| 2. | | | | | | | |
+| 2. Tarkan — Dudu | F3 | ✅ Approved | F#5 | ⚠️ Needs review | F#3–F#4 | 0.63 | ⚠️ Kısmi |
 | 3. | | | | | | | |
 | 4. | | | | | | | |
 | 5. | | | | | | | |
