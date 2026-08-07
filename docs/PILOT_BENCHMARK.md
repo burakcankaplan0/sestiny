@@ -21,7 +21,7 @@ aynı motor kullanılır. Vokal ayrıştırma (Pilot B) 5 şarkı bitmeden kurul
 | 1 | Kadın pop | Aleyna Tilki — Sen Olsan Bari | ✅ Tamamlandı (low ✅ / high ✅) |
 | 2 | Erkek pop | Tarkan — Dudu | ✅ Tamamlandı (low ✅ / high ⚠️ needs review) |
 | 3 | Arabesk / güçlü vibrato | Müslüm Gürses — Affet | ✅ Tamamlandı (low ✅ / high ❌ leakage; tessitura ✅) |
-| 4 | Melodik rap / autotune | (bekleniyor) | ⬜ |
+| 4 | Melodik rap / autotune | Poizi — Uyuyamadın Di Mi | ✅ Tamamlandı (low ⚠️ / high ✅; vocal_mode=melodic_rap) |
 | 5 | Rock / yoğun enstrüman | (bekleniyor) | ⬜ |
 
 ## Karar kuralı
@@ -139,7 +139,45 @@ değil" olarak reddedildi.)
 **Direct RMVPE başarılı mı?** ⚠️ **Kısmi** — tessitura doğru, low doğru, high
 yanlış (leakage full range'i şişirdi).
 
-### 4-5
+### 4. Melodik rap / autotune — Poizi / Uyuyamadın Di Mi · ⚠️ Kısmi (melodic_rap — anlam sınırlı)
+
+| Alan | Değer |
+| --- | --- |
+| Süre | 158.8 sn |
+| Metadata | **VAR** — başlık "POIZI - UYUYAMADIN Dİ Mİ (Official Video)", sanatçı "Poizi" (ID3'ten) |
+| **Full range low** | **F#3** (MIDI 54) · 90.57 sn · destek 0.21 sn · median conf 0.801 |
+| **Full range high** | **E4** (MIDI 64) · 66.6 sn · destek 0.22 sn · median conf 0.804 |
+| **Tessitura** | **A#3–D4** (4 yarı ton) · geçerli vokalin %75'i |
+| analysis_confidence | 0.79 (pilotta en yüksek) |
+| average RMVPE confidence | 0.803 |
+| voiced_frame_ratio | 0.711 (öncekiler ~0.37; iki kat) |
+| discarded_frame_ratio | 0.289 |
+| octave_jump_ratio | 0.0 |
+| kabul edilen segment | 492 · toplam geçerli vokal 100.7 sn |
+| needs_review | Hayır (pending) |
+| İşlem süresi | model yükleme 1.2 sn · inference 2.96 sn · toplam 3.06 sn |
+
+**Manuel doğrulama (kullanıcı):**
+- `low_manual_verification = needs_review` — F#3 (~185 Hz) harmonik desteği var
+  (~370/740/925 Hz), ama aynı bölgede F3 (~174.6 Hz) civarında da güçlü bir
+  perdeli yapı var; iki kaynak üst üste biniyor veya kısa bir pitch geçişi
+  olabilir. Rejected değil, approved da değil.
+- `high_manual_verification = approved` — E4 (~329–330 Hz + 660/1320 Hz uyumlu
+  harmonikler) açık şekilde gerçek.
+- `vocal_mode = melodic_rap` (manuel etiket).
+
+**⚠️ Önemli kural (kullanıcı):** *Yüksek voiced_frame_ratio veya yüksek RMVPE
+confidence tek başına autotune/melodic_rap sınıflandırma kuralı olarak
+KULLANILMAYACAK — bu ilişki henüz doğrulanmadı.* (Bu şarkıda ikisi de yüksek
+çıktı ama bu bir gözlem, kanıt değil.)
+
+**Tessitura A#3–D4:** ✅ başarılı/makul — dar, konuşma-benzeri bir bant;
+melodik rap için beklenen. Ama "vokal aralığı"nın anlamı gerçek şarkıcıdan farklı.
+
+**Direct RMVPE başarılı mı?** ⚠️ **Kısmi** — high doğru, low needs_review,
+tessitura makul; ama parça melodic_rap olduğu için aralığın anlamı sınırlı.
+
+### 5
 
 (bekleniyor)
 
@@ -152,5 +190,5 @@ yanlış (leakage full range'i şişirdi).
 | 1. Aleyna Tilki — Sen Olsan Bari | A#3 | ✅ Doğru | C5 | ✅ Doğru | D4–G#4 | 0.652 | ✅ Evet |
 | 2. Tarkan — Dudu | F3 | ✅ Approved | F#5 | ⚠️ Needs review | F#3–F#4 | 0.63 | ⚠️ Kısmi |
 | 3. Müslüm Gürses — Affet | A2 | ✅ Approved | A#5 | ❌ Rejected (non-lead) | G3–D4 | 0.633 | ⚠️ Kısmi |
-| 4. | | | | | | | |
+| 4. Poizi — Uyuyamadın Di Mi *(melodic_rap)* | F#3 | ⚠️ Needs review | E4 | ✅ Approved | A#3–D4 | 0.79 | ⚠️ Kısmi |
 | 5. | | | | | | | |
