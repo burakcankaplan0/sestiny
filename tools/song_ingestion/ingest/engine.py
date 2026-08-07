@@ -48,6 +48,7 @@ class AnalysisResult:
     average_pitch_confidence: float = 0.0
     voiced_frame_ratio: float = 0.0
     discarded_frame_ratio: float = 1.0
+    octave_jump_ratio: float = 0.0
     analysis_confidence: float = 0.0
     # review
     review_status: str = "pending"
@@ -84,6 +85,7 @@ def analyze_frames(frames, audio_duration_seconds: float) -> AnalysisResult:
         average_pitch_confidence=stats.average_pitch_confidence,
         voiced_frame_ratio=stats.voiced_frame_ratio,
         discarded_frame_ratio=stats.discarded_frame_ratio,
+        octave_jump_ratio=stats.octave_jump_ratio,
         segments=segments,
     )
 

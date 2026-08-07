@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..config import RMVPE_SAMPLE_RATE
+from ..config import RMVPE_DEVICE, RMVPE_SAMPLE_RATE
 
 DEFAULT_MODEL = "rmvpe"
 
@@ -40,7 +40,8 @@ def _get_rmvpe():
     if _rmvpe_instance is None:
         from rmvpe_onnx import RMVPE  # lazy: ağır bağımlılık
 
-        _rmvpe_instance = RMVPE()
+        # CPU sağlayıcısı: CoreML EP uzun/dinamik girdilerde çöküyor (bkz. config).
+        _rmvpe_instance = RMVPE(device=RMVPE_DEVICE)
     return _rmvpe_instance
 
 

@@ -16,8 +16,8 @@ scipy==1.18.0
 numpy==2.4.6
 huggingface_hub==1.26.1
 #
-# --- Ses çözme (gerçek dosya için gerekince) ---
-# av                      # PyAV — backend ile aynı
+# --- Ses çözme — KURULU (gerçek şarkı testi için) ---
+av==18.0.0                # PyAV — mp3/m4a/webm çözme + metadata; backend ile aynı
 #
 # --- Vokal ayrıştırma — HENÜZ KURULMADI (Pipeline B, benchmark haklı çıkarırsa) ---
 # Apple Silicon'da MLX-native, torch'suz tercih edilir:

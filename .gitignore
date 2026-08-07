@@ -43,6 +43,8 @@ uploads/
 # Song Ingestion Lab — yerel katalog (üretilen veri, Git'e girmez;
 # yalnızca export edilen production JSON depoya işlenir)
 tools/song_ingestion/catalog.db
+# Uç bölge preview klipleri (telifli ses parçası — asla Git'e girmez)
+tools/song_ingestion/previews/
 
 # İşletim sistemi / editör
 .DS_Store

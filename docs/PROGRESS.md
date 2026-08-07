@@ -1143,3 +1143,41 @@ Ayrıntılı yöntem: `docs/ANALYSIS_THRESHOLDS.md`. Kararlar: K-069.
 - Production backend hâlâ hiçbir ağır ML bağımlılığı almadı (Render hafif).
 
 Bu noktada durulup gerçek şarkı testi için kullanıcı onayı bekleniyor.
+
+---
+
+## Song Ingestion Lab — İlk gerçek şarkı testi + 5 şarkılık pilot planı · 2026-08-07
+
+Direct RMVPE ilk kez gerçek bir Türkçe şarkıda denendi (kullanıcının kendi
+yerel dosyası; indirilmedi, kopyalanmadı, kataloğa yazılmadı).
+
+### Bulunan ve düzeltilen gerçek sorun: CoreML EP tam şarkıda çöküyor
+
+2 sn'lik sentetik tonda CoreML çalışıyordu, ama ~3 dk'lık gerçek şarkıda
+onnxruntime CoreML EP "Error in building plan" ile çöktü — araştırmanın
+öngördüğü CoreML dinamik-şekil kırılganlığı. **Bu bir model/eşik sorunu
+değildi.** Çözüm: RMVPE çalıştırma sağlayıcısı **CPU'ya** alındı
+(`config.RMVPE_DEVICE = "cpu"`; araştırmanın önerdiği ilk-sürüm varsayılanı).
+Yeni model kurulmadı, hiçbir eşik değiştirilmedi. CPU'da 3 dk'lık şarkı
+~3.6 sn'de işlendi.
+
+### İlk şarkı sonucu — ✅ başarılı (kullanıcı manuel doğruladı)
+
+Aleyna Tilki — Sen Olsan Bari: full range **A#3–C5**, tessitura **D4–G#4**
+(vokalin %78'i), analysis_confidence 0.652. Kullanıcı iki uç bölge
+preview'ını dinledi: A#3 **doğru**, C5 **doğru** (kısa ama gerçek pitch,
+tessitura'yı belirlemiyor). Ayrıntı: `docs/PILOT_BENCHMARK.md`.
+
+### Sıradaki: 5 Şarkılık Direct RMVPE Pilot Testi
+
+5 farklı Türkçe vokal tipi (kadın pop ✅, erkek pop, arabesk/vibrato,
+melodik rap/autotune, rock/yoğun enstrüman) aynı eşiklerle analiz edilecek;
+her şarkı kullanıcı tarafından manuel doğrulanacak. **Karar kuralı: 5'te en
+az 4 uç nota güvenilirse Direct RMVPE ana pipeline kalır**, aksi hâlde
+gerekirse vokal separation fallback tasarlanır. 5 şarkı bitmeden Pipeline B
+kurulmaz. Plan ve toplu tablo: `docs/PILOT_BENCHMARK.md`.
+
+`analyze_file.py`'ye şarkı başına preview'ları ezişmesin diye opsiyonel
+etiket eklendi. `octave_jump_ratio` rapora ve `AnalysisResult`'a taşındı.
+
+Bu noktada durulup 2. şarkının (erkek pop) dosya yolu bekleniyor.

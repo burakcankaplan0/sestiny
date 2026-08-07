@@ -10,6 +10,13 @@ içinde açıklanmıştır. Sihirli sayı kodun içine dağılmaz (bkz. CLAUDE.m
 RMVPE_SAMPLE_RATE = 16000
 FRAME_HOP_SECONDS = 0.01
 
+# ONNX Runtime çalıştırma sağlayıcısı. Apple Silicon'da CoreML EP, tam
+# şarkı gibi UZUN/dinamik-şekilli girdilerde çöküyor ("Error in building plan")
+# — araştırmanın öngördüğü CoreML dinamik-şekil kırılganlığı. CPU EP
+# deterministik ve tek şarkı için yeterince hızlı; varsayılan bu. Hız gerekirse
+# ve dinamik-şekil sorunları çözülürse ileride "coreml" denenebilir.
+RMVPE_DEVICE = "cpu"
+
 # ---------- 1) Frame filtreleme ----------
 # RMVPE frame güveni bunun altındaysa frame güvenilmez sayılır ve atılır.
 MIN_PITCH_CONFIDENCE = 0.5
