@@ -1199,3 +1199,24 @@ Duman D2 bas gitar vb.). Karar: **adaptif iki aşama** — Stage A her şarkı
 Eşikler değiştirilmedi, pilot şarkıları kataloğa eklenmedi, production'a
 ağır bağımlılık eklenmedi. Sıradaki: Pipeline B için **yalnızca teknik plan**
 (model kurulmadan), kullanıcı onayı bekleniyor.
+
+---
+
+## Song Ingestion Lab — Pipeline B ilk benchmark ENGELLENDİ · 2026-08-10
+
+Kullanıcı Pipeline B teknik planını onayladı, ilk benchmark'a (Duman D2 bas
+leakage) geçildi. Kurallar: torch YOK, demucs-mlx[convert] YOK, yerel
+dönüştürme YOK, yalnızca hazır MLX ağırlıkları. **Detay ve karar: K-071.**
+
+**Özet:** demucs-mlx + safetensors torch'suz kuruldu; mlx-community'den hazır
+htdemucs.safetensors indirildi. Ama ayrıştırma çıktısı bozuk (4 stem de ~50x
+sessiz) — demucs-mlx 1.4.4 ile hazır ağırlıklar (mlx 0.30.3) uyumsuz. Bir
+config bug'ı (`segment:"39/5"` string) bulunup düzeltildi ama sessizlik sürdü.
+Duman sonucu GEÇERSİZ; sağlık kontrolü doğru yakaladı (voiced 0.343→0.0).
+
+**Bekleyen karar:** A) torch'suz eski sürüm sabitle, B) tek seferlik torch,
+C) 1.4.4-uyumlu hazır ağırlık ara, D) Pipeline B'yi bırak, K-070 adaptif
+Direct + needs_review'da kal. Kod yazıldı ama separation çalışmadığı için
+mühürlü. Eşikler değişmedi, production/katalog dokunulmadı, torch yok.
+
+**DEVAM NOKTASI (sonraki sohbet):** kullanıcı A/B/C/D'den birini seçecek.

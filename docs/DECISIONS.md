@@ -827,3 +827,28 @@ KULLANILMAYACAK** (Poizi'de ikisi de yüksekti ama bu ilişki doğrulanmadı).
 Pilot şarkıları production kataloğuna eklenmedi; production'a ağır bağımlılık
 eklenmedi. Pipeline B için önce yalnızca teknik plan hazırlanıyor (model
 kurulmadan).
+
+### K-071: Pipeline B ilk benchmark ENGELLENDİ — torch'suz MLX separation hazır ağırlıkları bozuk çıktı
+Kullanıcı, Pipeline B'nin ilk benchmark'ına (Duman D2 bas leakage) onay verdi;
+kesin kural: PyTorch KURMA, demucs-mlx[convert] KURMA, yerel checkpoint
+dönüştürme YOK, yalnızca hazır ön-dönüştürülmüş MLX ağırlıkları (mlx-community).
+**Yapılanlar (torch'suz):** lab venv'ine `mlx-audio-separator` (RoFormer
+denendi — tüm modelleri `.ckpt`, MLX'e dönüştürmek torch istiyor, o yol
+kapandı), ardından `demucs-mlx` + `safetensors` kuruldu (torch YOK).
+`mlx-community/demucs-mlx`'ten hazır `htdemucs.safetensors` + config indirildi.
+**Engel:** Ayrıştırma çalışıyor ve hızlı (20 sn → ~2.4 sn) ama **çıktı bozuk —
+dört stem de ~50x sessiz** (vocals RMS ~0.0012 vs orijinal ~0.077). Yol boyunca
+bir config hatası bulunup düzeltildi (hazır config'te `segment: "39/5"` string
+olarak kaydedilmiş, `"39/5"*44100` → "39/539/539..." crash'i; 7.8'e çevrildi)
+ama sessizlik sürdü. Kök neden: **mlx-community hazır ağırlıkları (mlx_version
+0.30.3) ile kurulu demucs-mlx 1.4.4 uyumsuz** — 573 tensör yükleniyor ama
+forward pass doğru çalışmıyor. **Sonuç:** Duman benchmark'ı GEÇERSİZ (rapor
+"D2 kayboldu" dedi ama tüm vokal kayboldu, stem sessiz; sağlık kontrolü
+yakaladı: voiced 0.343→0.0). "Separation D2'yi çözdü" DİYE İDDİA EDİLMEDİ.
+**Bekleyen karar (kullanıcıya soruldu):** A) torch'suz kal, eski demucs-mlx/mlx
+sürümü sabitle (belirsiz); B) tek seferlik torch ile resmi ağırlıkları
+dönüştür sonra kaldır (kural gevşetmesi gerekir); C) 1.4.4-uyumlu hazır MLX
+ağırlığı ara; D) Pipeline B'yi bırakıp K-070 adaptif Direct + needs_review'da
+kal. Öneri: A ile başla, olmazsa D. Kod yazıldı (`ingest/separate.py`,
+`benchmark_separation.py`) ama separation çalışmadığı için mühürlü; eşikler
+değişmedi, production'a/kataloğa dokunulmadı, torch hâlâ yok.
